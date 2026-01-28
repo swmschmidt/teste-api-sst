@@ -95,25 +95,38 @@ def extrair_valor_valido_da_resposta(dados_resposta: Dict, nome_param: str, tipo
 
 
 def construir_parametros_validos(parameters: List[Dict], resultado_sem_params: Dict = None, endpoint: Dict = None) -> Dict:
-    """Constrói um conjunto válido de parâmetros baseado na resposta sem parâmetros"""
+    """Constrói um conjunto válido de parâmetros baseado na resposta sem parâmetros
+    Retorna apenas parâmetros de query (in='query'), não formData"""
     if not parameters:
         return {}
     
     parametros_validos = {}
     
+    # Filtra apenas parâmetros de query (não formData)
+    parametros_query = [p for p in parameters if isinstance(p, dict) and p.get("in") == "query"]
+    
+    if not parametros_query:
+        return {}
+    
     if resultado_sem_params and resultado_sem_params.get("success"):
         # Extrai valores para TODOS os parâmetros do primeiro registro
-        for param in parameters:
-            nome_param = param["name"]
-            tipo_param = param["type"]
+        for param in parametros_query:
+            nome_param = param.get("name")
+            if not nome_param:
+                continue
+                
+            tipo_param = param.get("type", "string")
             valor = extrair_valor_valido_da_resposta(resultado_sem_params["data"], nome_param, tipo_param)
             parametros_validos[nome_param] = valor
     else:
         # Fallback: usa valores padrão apenas para o primeiro parâmetro
-        primeiro_param = parameters[0]
-        nome_param = primeiro_param["name"]
-        tipo_param = primeiro_param["type"]
-        parametros_validos[nome_param] = 1 if tipo_param == "integer" else "teste"
+        if parametros_query and isinstance(parametros_query[0], dict):
+            primeiro_param = parametros_query[0]
+            nome_param = primeiro_param.get("name")
+            tipo_param = primeiro_param.get("type", "string")
+            
+            if nome_param:
+                parametros_validos[nome_param] = 1 if tipo_param == "integer" else "teste"
     
     # Caso especial para endpoints R057B e R057D: hardcode P_SCO_ID_RISK_FACTOR = "AG1"
     # Este valor não é retornado no GET sem parâmetros, então precisa ser fixado manualmente
@@ -135,16 +148,26 @@ def construir_parametros_validos(parameters: List[Dict], resultado_sem_params: D
 
 
 def construir_parametros_invalidos(parameters: List[Dict]) -> Dict:
-    """Constrói um conjunto inválido de parâmetros"""
+    """Constrói um conjunto inválido de parâmetros
+    Retorna apenas parâmetros de query (in='query'), não formData"""
     if not parameters:
+        return {"invalid_param": "999999"}
+    
+    # Filtra apenas parâmetros de query
+    parametros_query = [p for p in parameters if isinstance(p, dict) and p.get("in") == "query"]
+    
+    if not parametros_query:
         return {"invalid_param": "999999"}
     
     parametros_invalidos = {}
     
-    # Cria valores inválidos para TODOS os parâmetros
-    for param in parameters:
-        nome_param = param["name"]
-        tipo_param = param["type"]
+    # Cria valores inválidos para TODOS os parâmetros de query
+    for param in parametros_query:
+        nome_param = param.get("name")
+        if not nome_param:
+            continue
+            
+        tipo_param = param.get("type", "string")
         
         # Usa número inválido para tipos numéricos, string para outros
         if tipo_param in ["integer", "number"]:

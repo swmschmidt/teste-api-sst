@@ -10,6 +10,11 @@ REQUEST_DELAY_SECONDS = 1 # Delay entre testes em segundos
 MAX_RESPONSE_SIZE = 5000 # Limita o tamanho da resposta que estará no relatório
 ENDPOINT_LIMIT = 0  # 0 = todos os endpoints, qualquer outro número = limita aos primeiros N
 
+# Modo de teste
+# "GET_ONLY" = Testa apenas endpoints GET (modo padrão)
+# "FULL_CRUD" = Testa todos os métodos HTTP (GET, POST, PUT, DELETE) em sequência
+TEST_MODE = "GET_ONLY"
+
 # Valores hardcoded para endpoint R082H que requer parâmetros obrigatórios
 P_SCO_ID_HR_R082H = "10609"
 P_SCO_ID_DISABILITY_R082H = "01"

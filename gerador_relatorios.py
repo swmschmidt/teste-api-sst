@@ -100,6 +100,10 @@ def gerar_relatorio_completo(todos_resultados: List[Dict], base_url: str) -> str
         linhas.append(f"\nENDPOINT: {teste['endpoint']}")
         linhas.append(f"TIPO DE TESTE: {teste['test_type']}")
         
+        # Adiciona método HTTP se disponível
+        if "method" in teste:
+            linhas.append(f"MÉTODO: {teste['method']}")
+        
         resultado = teste["result"]
         
         # Verifica se o teste foi pulado (caso especial)
@@ -109,8 +113,13 @@ def gerar_relatorio_completo(todos_resultados: List[Dict], base_url: str) -> str
             linhas.append("-" * 80)
             continue
         
-        if "params" in teste:
-            linhas.append(f"PARÂMETROS: {json.dumps(teste['params'], ensure_ascii=False)}")
+        # Adiciona parâmetros da requisição
+        if "params" in teste and teste["params"]:
+            linhas.append(f"PARÂMETROS (query): {json.dumps(teste['params'], ensure_ascii=False)}")
+        
+        # Adiciona body da requisição
+        if "body" in teste and teste["body"]:
+            linhas.append(f"BODY (formData): {json.dumps(teste['body'], ensure_ascii=False)}")
         
         linhas.append(f"STATUS HTTP: {resultado.get('status_code', 'N/A')}")
         linhas.append(f"TEMPO DE RESPOSTA: {resultado.get('response_time_ms', 'N/A')}ms")
@@ -145,8 +154,17 @@ def gerar_relatorio_falhas(todos_resultados: List[Dict], base_url: str) -> str:
         linhas.append(f"\nENDPOINT: {teste['endpoint']}")
         linhas.append(f"TIPO DE TESTE: {teste['test_type']}")
         
-        if "params" in teste:
-            linhas.append(f"PARÂMETROS: {json.dumps(teste['params'], ensure_ascii=False)}")
+        # Adiciona método HTTP se disponível
+        if "method" in teste:
+            linhas.append(f"MÉTODO: {teste['method']}")
+        
+        # Adiciona parâmetros da requisição
+        if "params" in teste and teste["params"]:
+            linhas.append(f"PARÂMETROS (query): {json.dumps(teste['params'], ensure_ascii=False)}")
+        
+        # Adiciona body da requisição
+        if "body" in teste and teste["body"]:
+            linhas.append(f"BODY (formData): {json.dumps(teste['body'], ensure_ascii=False)}")
         
         resultado = teste["result"]
         linhas.append(f"STATUS HTTP: {resultado.get('status_code', 'N/A')}")
