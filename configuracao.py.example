@@ -1,0 +1,21 @@
+# Configurações gerais do sistema de testes
+
+# Autenticação e URLs
+API_KEY = "Basic YOUR_API_KEY_HERE"
+BASE_URL = "http://your-server-ip:port/REST/api-path"
+SWAGGER_URL = f"https://your-swagger-url/swagger?base_url={BASE_URL}"
+
+# Configurações de execução
+REQUEST_DELAY_SECONDS = 1 # Delay entre testes em segundos
+MAX_RESPONSE_SIZE = 5000 # Limita o tamanho da resposta que estará no relatório
+ENDPOINT_LIMIT = 0  # 0 = todos os endpoints, qualquer outro número = limita aos primeiros N
+
+# Valores hardcoded para endpoint R082H que requer parâmetros obrigatórios
+P_SCO_ID_HR_R082H = "10609"
+P_SCO_ID_DISABILITY_R082H = "01"
+P_SCO_DT_START_R082H = "2025-10-09"
+
+# Headers padrão para requisições
+HEADERS_DEFAULT = {
+    "M4Rest-Language": "5"
+}
