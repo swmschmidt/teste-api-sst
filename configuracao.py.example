@@ -6,21 +6,116 @@ BASE_URL = "http://your-server-ip:port/REST/api-path"
 SWAGGER_URL = f"https://your-swagger-url/swagger?base_url={BASE_URL}"
 
 # Configurações de execução
-REQUEST_DELAY_SECONDS = 1 # Delay entre testes em segundos
-MAX_RESPONSE_SIZE = 5000 # Limita o tamanho da resposta que estará no relatório
+REQUEST_DELAY_SECONDS = 1  # Delay entre testes em segundos
+MAX_RESPONSE_SIZE = 5000  # Limita o tamanho da resposta que estará no relatório
 ENDPOINT_LIMIT = 0  # 0 = todos os endpoints, qualquer outro número = limita aos primeiros N
+
+# Testar apenas um endpoint específico (None = testa todos)
+# Use o valor de x_objeto_api, exemplo: "CBR_API_REST_SST_R050"
+# ENDPOINT_ESPECIFICO = "CBR_API_REST_SST_R050"
+ENDPOINT_ESPECIFICO = None
 
 # Modo de teste
 # "GET_ONLY" = Testa apenas endpoints GET (modo padrão)
 # "FULL_CRUD" = Testa todos os métodos HTTP (GET, POST, PUT, DELETE) em sequência
 TEST_MODE = "GET_ONLY"
 
-# Valores hardcoded para endpoint R082H que requer parâmetros obrigatórios
-P_SCO_ID_HR_R082H = "10609"
-P_SCO_ID_DISABILITY_R082H = "01"
-P_SCO_DT_START_R082H = "2025-10-09"
-
 # Headers padrão para requisições
 HEADERS_DEFAULT = {
     "M4Rest-Language": "5"
+}
+
+# ===== Critérios de Sucesso dos Testes =====
+# Configure aqui os valores esperados para determinar sucesso/falha dos testes
+CRITERIOS_SUCESSO = {
+    # Teste sem parâmetros: codRetorno esperado
+    "sem_parametros": {
+        "codRetorno": "200"
+    },
+    # Teste com parâmetros válidos: codRetorno e totalRegistros esperados
+    "parametros_validos": {
+        "codRetorno": "200",
+        "totalRegistros": "1"
+    },
+    # Teste com parâmetros inválidos: codRetorno esperado
+    "parametros_invalidos": {
+        "codRetorno": "404"
+    },
+    # CRUD - GET: codRetorno esperado
+    "crud_get": {
+        "codRetorno": "200"
+    },
+    # CRUD - POST/PUT: codRetorno e totalRegistros esperados
+    "crud_post": {
+        "codRetorno": "200",
+        "totalRegistros": "1"
+    },
+    "crud_put": {
+        "codRetorno": "200",
+        "totalRegistros": "1",
+        "validar_atualizacao": True  # Verifica se campos foram atualizados
+    },
+    # CRUD - DELETE: codRetorno e texto na descrição
+    "crud_delete": {
+        "codRetorno": "200",
+        "descRetorno_contem": "apagados com sucesso"  # Texto que deve aparecer na resposta
+    }
+}
+
+# ===== Overrides de Endpoints =====
+# Configurações especiais para endpoints que requerem valores hardcoded
+# Estrutura:
+# "x_objeto_api": {
+#     "pular_sem_parametros": True/False,
+#         # Se deve pular teste sem parâmetros (para endpoints que requerem parâmetros obrigatórios)
+#
+#     "mensagem_pular": "Mensagem",
+#         # Mensagem explicativa quando teste sem parâmetros é pulado
+#         # Exemplo: "Não há teste sem parâmetros. P_ID é obrigatório."
+#
+#     "validacao_comparativa": True/False,
+#         # Se True, valida totalRegistros de forma comparativa em vez de esperar 1 registro
+#         # Validação normal: espera totalRegistros=1 quando usa parâmetros válidos
+#         # Validação comparativa: compara totalRegistros com parâmetros vs sem parâmetros
+#         #   - Se sem_parametros retorna 1 registro: com_parametros deve retornar 1
+#         #   - Se sem_parametros retorna 5 registros: com_parametros deve retornar <5 (ex: 1 ou 2)
+#         # Use quando o endpoint filtra dentro de um conjunto maior de registros
+#
+#     "substituicoes": {
+#         "GET": {"param": "valor"},     # Substituições para método GET
+#         "POST": {"param": "valor"},    # Substituições para método POST
+#         "PUT": {"param": "valor"},     # Substituições para método PUT
+#         "DELETE": {"param": "valor"}   # Substituições para método DELETE
+#     }
+# }
+OVERRIDES_ENDPOINTS = {
+    # Exemplo 1: Endpoint com parâmetros obrigatórios
+    "CBR_API_REST_SST_R082H": {
+        "pular_sem_parametros": True,
+        "mensagem_pular": "Não há teste sem parâmetros para este endpoint. P_SCO_ID_HR é obrigatório.",
+        "substituicoes": {
+            "GET": {
+                "P_SCO_ID_HR": "10609",
+                "P_SCO_ID_DISABILITY": "01",
+                "P_SCO_DT_START": "2025-10-09"
+            }
+        }
+    },
+    # Exemplo 2: Endpoint com valores específicos por método
+    "CBR_API_REST_SST_R057B": {
+        "substituicoes": {
+            "GET": {
+                "P_SCO_ID_RISK_FACTOR": "AG1"
+            },
+            "POST": {
+                "P_SCO_ID_RISK_FACTOR": "AG2"  # Valor diferente para POST
+            }
+        }
+    },
+    # Exemplo 3: Endpoint com validação comparativa de totalRegistros
+    # Sem parâmetros retorna 5 registros, com parâmetros deve retornar menos (ex: 1)
+    "CBR_API_REST_SST_R050": {
+        "validacao_comparativa": True
+    }
+    # Adicione mais overrides conforme necessário...
 }

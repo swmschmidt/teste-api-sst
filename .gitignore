@@ -33,3 +33,6 @@ Thumbs.db
 # Reports and logs
 *.log
 relatorio_*.txt
+
+# Folders
+suporte/
