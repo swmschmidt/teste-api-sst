@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Testes API SST</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: #e2e8f0;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 13px;
+        }
+
+        .header-nav {
+            margin-top: 10px;
+        }
+
+        .header-nav a {
+            display: inline-block;
+            text-decoration: none;
+            color: #e2e8f0;
+            background: #4a5568;
+            border: 1px solid #718096;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .header-nav a:hover {
+            background: #5a67d8;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Left Sidebar - Endpoint Cards */
+        .sidebar {
+            width: 350px;
+            background: #252525;
+            border-right: 2px solid #3a3a3a;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 15px 20px;
+            background: #2d2d2d;
+            border-bottom: 2px solid #3a3a3a;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .endpoints-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .endpoint-card {
+            background: #2d2d2d;
+            border: 2px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .endpoint-card:hover {
+            border-color: #4a5568;
+            box-shadow: 0 2px 8px rgba(74, 85, 104, 0.3);
+        }
+
+        .endpoint-card.selected {
+            border-color: #4a5568;
+            background: #3a3a3a;
+        }
+
+        .endpoint-card.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .endpoint-card.failure {
+            border-left: 4px solid #dc3545;
+        }
+
+        .endpoint-card.untested {
+            border-left: 4px solid #6c757d;
+        }
+
+        .endpoint-card.testing {
+            border-left: 4px solid #ffc107;
+            background: #3a3a3a;
+        }
+
+        .endpoint-card.partial {
+            border-left: 4px solid #fd7e14;
+        }
+
+        .card-objeto {
+            font-weight: 600;
+            color: #63b3ed;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .card-name {
+            font-size: 13px;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .card-route {
+            font-size: 11px;
+            color: #a0aec0;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 6px;
+            word-break: break-all;
+        }
+
+        .card-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .card-status.success {
+            background: #22543d;
+            color: #9ae6b4;
+        }
+
+        .card-status.failure {
+            background: #742a2a;
+            color: #fc8181;
+        }
+
+        .card-status.untested {
+            background: #4a5568;
+            color: #cbd5e0;
+        }
+
+        .card-status.testing {
+            background: #744210;
+            color: #fbd38d;
+        }
+
+        .card-status.partial {
+            background: #7c2d12;
+            color: #fed7aa;
+        }
+
+        /* Right Content Area */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Endpoint Details Panel */
+        .endpoint-details {
+            background: #252525;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .endpoint-details.visible {
+            display: block;
+        }
+
+        .endpoint-details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3a3a3a;
+        }
+
+        .endpoint-details-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .endpoint-details-subtitle {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-top: 4px;
+        }
+
+        .close-details {
+            background: #3a3a3a;
+            border: none;
+            color: #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .close-details:hover {
+            background: #4a5568;
+        }
+
+        /* Manual Test Section */
+        .manual-test-section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .request-line {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .method-select {
+            background: #2d2d2d;
+            color: #e2e8f0;
+            border: 1px solid #3a3a3a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 100px;
+            cursor: pointer;
+        }
+
+        .url-input {
+            flex: 1;
+            background: #2d2d2d;
+            color: #e2e8f0;
+            border: 1px solid #3a3a3a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Parameters Table */
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .params-table th {
+            background: #2d2d2d;
+            color: #a0aec0;
+            text-align: left;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #3a3a3a;
+        }
+
+        .params-table td {
+            padding: 8px 10px;
+            border: 1px solid #3a3a3a;
+        }
+
+        .params-table input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .params-table input[type="text"] {
+            width: 100%;
+            background: #1a1a1a;
+            color: #e2e8f0;
+            border: 1px solid #3a3a3a;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .params-table input[type="text"]:focus {
+            outline: none;
+            border-color: #4a5568;
+        }
+
+        .params-table tr:hover {
+            background: #2d2d2d;
+        }
+
+        .add-param-btn {
+            background: #2d2d2d;
+            color: #e2e8f0;
+            border: 1px solid #3a3a3a;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-param-btn:hover {
+            background: #3a3a3a;
+        }
+
+        /* HTTP Method Containers */
+        .http-method-container {
+            background: #2d2d2d;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .method-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #3a3a3a;
+        }
+
+        .method-badge {
+            font-weight: 700;
+            font-size: 14px;
+            padding: 8px 20px;
+            border-radius: 6px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .get-badge {
+            background: #2c5282;
+            color: #90cdf4;
+        }
+
+        .post-badge {
+            background: #276749;
+            color: #9ae6b4;
+        }
+
+        .put-badge {
+            background: #744210;
+            color: #fbd38d;
+        }
+
+        .delete-badge {
+            background: #742a2a;
+            color: #fc8181;
+        }
+
+        .method-url {
+            flex: 1;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            color: #cbd5e0;
+            font-weight: 500;
+        }
+
+        .send-button-inline {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .send-button-inline:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+        }
+
+        .send-button-inline:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .params-section {
+            margin-top: 15px;
+        }
+
+        .params-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #cbd5e0;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .params-table-fixed {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .params-table-fixed th {
+            background: #1a1a1a;
+            color: #cbd5e0;
+            text-align: left;
+            padding: 12px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid #3a3a3a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .params-table-fixed td {
+            padding: 12px 14px;
+            border: 1px solid #3a3a3a;
+            vertical-align: middle;
+            background: #252525;
+        }
+
+        .params-table-fixed td:nth-child(2) {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            color: #e2e8f0;
+            font-weight: 600;
+            width: 40%;
+        }
+
+        .params-table-fixed input[type="text"] {
+            width: 100%;
+            background: #1a1a1a;
+            color: #e2e8f0;
+            border: 1px solid #4a4a4a;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .params-table-fixed input[type="text"]:focus {
+            outline: none;
+            border-color: #38a169;
+            background: #252525;
+            box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.1);
+        }
+
+        .params-table-fixed input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #38a169;
+        }
+
+        .params-table-fixed tbody tr:hover td {
+            background: #2d2d2d;
+        }
+
+        .no-params {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            padding: 20px !important;
+        }
+
+        .no-methods-available {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            padding: 40px;
+            background: #2d2d2d;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+        }
+
+        .method-results {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #3a3a3a;
+        }
+
+        /* Test Results Section */
+        .test-results-section {
+            margin-bottom: 30px;
+        }
+
+        .results-container {
+            background: #2d2d2d;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .result-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .result-status {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .result-status.success {
+            background: #22543d;
+            color: #9ae6b4;
+        }
+
+        .result-status.failure {
+            background: #742a2a;
+            color: #fc8181;
+        }
+
+        .result-status.skipped {
+            background: #4a5568;
+            color: #cbd5e0;
+        }
+
+        .result-body {
+            font-size: 12px;
+            color: #a0aec0;
+            line-height: 1.6;
+        }
+
+        .result-code {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #63b3ed;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+            font-style: italic;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: #252525;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-carregar {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+
+        .btn-executar {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        }
+
+        .btn-relatorio {
+            background: linear-gradient(135deg, #5a67d8 0%, #434190 100%);
+        }
+
+        .btn-limpar {
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+            min-width: 100px;
+            flex: 0;
+        }
+
+        .btn-cancelar {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            min-width: 100px;
+            flex: 0;
+            display: none;
+        }
+
+        .btn-cancelar.visible {
+            display: inline-block;
+        }
+
+        /* Console Output */
+        .console-container {
+            background: #252525;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+            min-height: 300px;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .console-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .console-output {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.5;
+            max-height: 100%;
+        }
+
+        .console-output.empty {
+            color: #718096;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+        }
+
+        .log-entry {
+            margin-bottom: 2px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-ativo {
+            background: #28a745;
+            box-shadow: 0 0 10px #28a745;
+        }
+
+        .status-executando {
+            background: #ffc107;
+            box-shadow: 0 0 10px #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-inativo {
+            background: #6c757d;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Scrollbar styling */
+        .endpoints-container::-webkit-scrollbar,
+        .console-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .endpoints-container::-webkit-scrollbar-track,
+        .console-output::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .endpoints-container::-webkit-scrollbar-thumb,
+        .console-output::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+
+        .endpoints-container::-webkit-scrollbar-thumb:hover,
+        .console-output::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #718096;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+    <!-- Socket.IO Client Library -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>Sistema de Testes API SST</h1>
+        <p>Interface de controle para execução de testes automatizados</p>
+        <div class="header-nav">
+            <a href="index.html">Voltar ao menu</a>
+            <a href="migracao.html">Abrir página de migração</a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Left Sidebar - Endpoint Cards -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                Endpoints
+                <span id="endpointCount" style="float: right; color: #63b3ed;">(0)</span>
+            </div>
+            <div class="endpoints-container" id="endpointsContainer">
+                <div class="empty-state">
+                    <div class="empty-state-text">
+                        Nenhum endpoint carregado<br>
+                        Clique em "Carregar API" para começar
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Content Area -->
+        <div class="content-area">
+            <!-- Endpoint Details Panel -->
+            <div class="endpoint-details" id="endpointDetails">
+                <div class="endpoint-details-header">
+                    <div>
+                        <div class="endpoint-details-title" id="detailsTitle">Endpoint Details</div>
+                        <div class="endpoint-details-subtitle" id="detailsSubtitle"></div>
+                    </div>
+                    <button class="close-details" onclick="fecharDetalhes()">Fechar</button>
+                </div>
+
+                <!-- Test Results -->
+                <div class="test-results-section">
+                    <div class="section-header">Resultados dos Testes</div>
+                    <div class="results-container" id="testResultsContainer">
+                        <div class="no-results">Nenhum resultado disponível</div>
+                    </div>
+                </div>
+
+                <!-- Manual Test -->
+                <div class="manual-test-section">
+                    <div class="section-header">Teste Manual</div>
+                    
+                    <!-- GET Method Container -->
+                    <div class="http-method-container" id="getMethodContainer" style="display: none;">
+                        <div class="method-header">
+                            <span class="method-badge get-badge">GET</span>
+                            <span class="method-url" id="getUrl"></span>
+                            <button class="send-button-inline" onclick="enviarTesteManual('GET')" id="sendGetButton">Enviar</button>
+                        </div>
+                        <div class="params-section">
+                            <div class="params-label">Parameters</div>
+                            <table class="params-table-fixed">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Enable</th>
+                                        <th>Parameter</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="getParamsBody">
+                                    <tr><td colspan="3" class="no-params">Nenhum par\u00e2metro dispon\u00edvel</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="method-results" id="getResults">
+                            <div class="params-label" style="margin-top: 20px;">Resultados</div>
+                            <div class="results-container">
+                                <div class="no-results">Nenhum resultado disponível</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- POST Method Container -->
+                    <div class="http-method-container" id="postMethodContainer" style="display: none;">
+                        <div class="method-header">
+                            <span class="method-badge post-badge">POST</span>
+                            <span class="method-url" id="postUrl"></span>
+                            <button class="send-button-inline" onclick="enviarTesteManual('POST')" id="sendPostButton">Enviar</button>
+                        </div>
+                        <div class="params-section">
+                            <div class="params-label">Parameters</div>
+                            <table class="params-table-fixed">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Enable</th>
+                                        <th>Parameter</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="postParamsBody">
+                                    <tr><td colspan="3" class="no-params">Nenhum par\u00e2metro dispon\u00edvel</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="method-results" id="postResults">
+                            <div class="params-label" style="margin-top: 20px;">Resultados</div>
+                            <div class="results-container">
+                                <div class="no-results">Nenhum resultado disponível</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PUT Method Container -->
+                    <div class="http-method-container" id="putMethodContainer" style="display: none;">
+                        <div class="method-header">
+                            <span class="method-badge put-badge">PUT</span>
+                            <span class="method-url" id="putUrl"></span>
+                            <button class="send-button-inline" onclick="enviarTesteManual('PUT')" id="sendPutButton">Enviar</button>
+                        </div>
+                        <div class="params-section">
+                            <div class="params-label">Parameters</div>
+                            <table class="params-table-fixed">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Enable</th>
+                                        <th>Parameter</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="putParamsBody">
+                                    <tr><td colspan="3" class="no-params">Nenhum par\u00e2metro dispon\u00edvel</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="method-results" id="putResults">
+                            <div class="params-label" style="margin-top: 20px;">Resultados</div>
+                            <div class="results-container">
+                                <div class="no-results">Nenhum resultado disponível</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DELETE Method Container -->
+                    <div class="http-method-container" id="deleteMethodContainer" style="display: none;">
+                        <div class="method-header">
+                            <span class="method-badge delete-badge">DELETE</span>
+                            <span class="method-url" id="deleteUrl"></span>
+                            <button class="send-button-inline" onclick="enviarTesteManual('DELETE')" id="sendDeleteButton">Enviar</button>
+                        </div>
+                        <div class="params-section">
+                            <div class="params-label">Parameters</div>
+                            <table class="params-table-fixed">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Enable</th>
+                                        <th>Parameter</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deleteParamsBody">
+                                    <tr><td colspan="3" class="no-params">Nenhum par\u00e2metro dispon\u00edvel</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="method-results" id="deleteResults">
+                            <div class="params-label" style="margin-top: 20px;">Resultados</div>
+                            <div class="results-container">
+                                <div class="no-results">Nenhum resultado disponível</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="no-methods-available" id="noMethodsAvailable">
+                        Nenhum m\u00e9todo HTTP dispon\u00edvel para este endpoint
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="control-title">
+                    <span class="status-indicator status-inativo" id="statusIndicador"></span>
+                    Controles
+                </div>
+                <div class="button-group">
+                    <button class="btn-carregar" onclick="carregarAPI()" id="btnCarregar">
+                        Carregar API
+                    </button>
+                    <button class="btn-executar" onclick="executarTestes()" id="btnExecutar" disabled>
+                        Iniciar Testes
+                    </button>
+                    <button class="btn-relatorio" onclick="gerarRelatorios()" id="btnRelatorio">
+                        Gerar Relatório
+                    </button>
+                    <button class="btn-cancelar" onclick="cancelarTestes()" id="btnCancelar">
+                        Cancelar
+                    </button>
+                    <button class="btn-limpar" onclick="limparConsole()">
+                        Limpar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Console Output -->
+            <div class="console-container">
+                <div class="console-header">
+                    <div class="console-title">Saída do Console</div>
+                </div>
+                <div class="console-output empty" id="consoleOutput">
+                    Aguardando comandos...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000';
+        let socket = null;
+        let intervalStatus = null;
+        let currentEndpoints = [];
+        let selectedEndpoint = null;
+        let selectedEndpointMethods = null;  // Store methods metadata (consumes, etc.)
+        let endpointResults = {};  // Store test results by path
+
+        // ===== WebSocket Setup =====
+        
+        function conectarWebSocket() {
+            socket = io(API_BASE_URL);
+            
+            socket.on('connect', () => {
+                console.log('WebSocket conectado');
+                adicionarLog('[SYSTEM] Conectado ao servidor\n');
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('WebSocket desconectado');
+                document.getElementById('statusIndicador').className = 'status-indicator status-inativo';
+            });
+            
+            socket.on('console_output', (data) => {
+                adicionarLog(data.message);
+            });
+            
+            socket.on('endpoint_status_update', (data) => {
+                atualizarStatusEndpoint(data.path, data.status);
+            });
+            
+            socket.on('test_result', (data) => {
+                // Armazena/atualiza resultado do teste (apenas o mais recente por endpoint+método)
+                if (!endpointResults[data.path]) {
+                    endpointResults[data.path] = [];
+                }
+                
+                // Encontra e substitui resultado existente para o mesmo método, ou adiciona novo
+                const existingIndex = endpointResults[data.path].findIndex(
+                    r => r.method === data.result.method
+                );
+                
+                if (existingIndex >= 0) {
+                    // Substitui resultado existente com o mais recente
+                    endpointResults[data.path][existingIndex] = data.result;
+                    adicionarLog(`[UPDATE] Resultado atualizado: ${data.result.method} ${data.path}\n`);
+                } else {
+                    // Adiciona novo resultado
+                    endpointResults[data.path].push(data.result);
+                }
+                
+                // Calcula e atualiza o status do endpoint baseado nos resultados
+                const novoStatus = calcularStatusEndpoint(data.path);
+                atualizarStatusEndpoint(data.path, novoStatus);
+                
+                // Atualiza a visualização se for o endpoint selecionado
+                if (selectedEndpoint && selectedEndpoint.path === data.path) {
+                    atualizarResultadosTeste();
+                    // Atualiza também o container do método específico
+                    if (data.result.method) {
+                        atualizarResultadosMetodo(data.result.method);
+                    }
+                }
+            });
+        }
+
+        // ===== Console Functions =====
+        
+        function adicionarLog(mensagem) {
+            const consoleDiv = document.getElementById('consoleOutput');
+            consoleDiv.classList.remove('empty');
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = mensagem;
+            consoleDiv.appendChild(logEntry);
+            
+            // Auto scroll to bottom (with smooth behavior)
+            requestAnimationFrame(() => {
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            });
+        }
+
+        function limparConsole() {
+            const consoleDiv = document.getElementById('consoleOutput');
+            consoleDiv.innerHTML = 'Console limpo. Aguardando comandos...';
+            consoleDiv.classList.add('empty');
+            
+            // Limpa também no servidor
+            fetch(`${API_BASE_URL}/api/console/limpar`, {
+                method: 'POST'
+            }).catch(error => {
+                console.error('Erro ao limpar logs:', error);
+            });
+        }
+
+        // ===== Endpoint Card Functions =====
+        
+        function calcularStatusEndpoint(path) {
+            // Calcula o status baseado nos resultados dos testes disponíveis
+            const results = endpointResults[path];
+            
+            // Se não há resultados, status é "untested"
+            if (!results || results.length === 0) {
+                return 'untested';
+            }
+            
+            // Busca o endpoint para ver quais métodos estão disponíveis
+            const endpoint = currentEndpoints.find(e => e.path === path);
+            
+            // Se for o endpoint selecionado, verifica quais containers de método estão visíveis
+            let availableMethods = [];
+            if (selectedEndpoint && selectedEndpoint.path === path) {
+                if (document.getElementById('getMethodContainer').style.display !== 'none') {
+                    availableMethods.push('GET');
+                }
+                if (document.getElementById('postMethodContainer').style.display !== 'none') {
+                    availableMethods.push('POST');
+                }
+                if (document.getElementById('putMethodContainer').style.display !== 'none') {
+                    availableMethods.push('PUT');
+                }
+                if (document.getElementById('deleteMethodContainer').style.display !== 'none') {
+                    availableMethods.push('DELETE');
+                }
+            } else {
+                // Se não é o endpoint selecionado, usa os métodos que foram testados (únicos)
+                availableMethods = [...new Set(results.map(r => r.method))];
+            }
+            
+            // Separa resultados por status
+            const testedMethods = results.map(r => r.method);
+            const successResults = results.filter(r => r.success && !r.skipped);
+            const failedResults = results.filter(r => !r.success && !r.skipped);
+            const skippedResults = results.filter(r => r.skipped);
+            
+            // Verifica se todos os métodos disponíveis foram testados
+            const allMethodsTested = availableMethods.every(method => 
+                testedMethods.includes(method)
+            );
+            
+            // Se nenhum método foi realmente testado (todos skipped), retorna untested
+            if (successResults.length === 0 && failedResults.length === 0) {
+                return 'untested';
+            }
+            
+            // Se todos os métodos disponíveis foram testados e todos tiveram sucesso
+            if (allMethodsTested && failedResults.length === 0 && successResults.length === availableMethods.length) {
+                return 'success';
+            }
+            
+            // Se todos os métodos testados falharam (e pelo menos um foi testado)
+            if (successResults.length === 0 && failedResults.length > 0) {
+                return 'failure';
+            }
+            
+            // Se há pelo menos um sucesso e pelo menos uma falha/verificar = parcial
+            if (successResults.length > 0 && failedResults.length > 0) {
+                return 'partial';
+            }
+            
+            // Caso contrário: nem todos os métodos foram testados
+            return 'partial';
+        }
+        
+        function atualizarStatusEndpoint(path, status) {
+            // Atualiza no array de endpoints
+            const endpoint = currentEndpoints.find(e => e.path === path);
+            if (endpoint) {
+                endpoint.status = status;
+            }
+            
+            // Atualiza o card visualmente
+            const card = document.querySelector(`[data-path="${CSS.escape(path)}"]`);
+            if (card) {
+                // Remove classes de status antigas
+                card.classList.remove('success', 'failure', 'untested', 'partial');
+                card.classList.add(status);
+                
+                // Atualiza o badge de status
+                const statusBadge = card.querySelector('.card-status');
+                if (statusBadge) {
+                    statusBadge.className = `card-status ${status}`;
+                    statusBadge.textContent = 
+                        status === 'success' ? 'Sucesso' :
+                        status === 'failure' ? 'Falha' :
+                        status === 'testing' ? 'Testando' :
+                        status === 'partial' ? 'Parcial' : 'Não testado';
+                }
+            }
+        }
+        
+        function criarCardEndpoint(endpoint) {
+            const card = document.createElement('div');
+            card.className = `endpoint-card ${endpoint.status}`;
+            card.dataset.path = endpoint.path;
+            
+            card.innerHTML = `
+                <div class="card-objeto">${endpoint.x_objeto_api || 'N/A'}</div>
+                <div class="card-name">${endpoint.summary || 'Sem descrição'}</div>
+                <div class="card-route">${endpoint.path}</div>
+                <span class="card-status ${endpoint.status}">
+                    ${endpoint.status === 'success' ? 'Sucesso' : 
+                      endpoint.status === 'failure' ? 'Falha' : 
+                      endpoint.status === 'partial' ? 'Parcial' : 
+                      endpoint.status === 'testing' ? 'Testando' : 'Não testado'}
+                </span>
+            `;
+            
+            card.onclick = () => selecionarEndpoint(endpoint);
+            
+            return card;
+        }
+
+        function selecionarEndpoint(endpoint) {
+            selectedEndpoint = endpoint;
+            
+            // Remove seleção anterior
+            document.querySelectorAll('.endpoint-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Adiciona seleção no card clicado
+            const card = document.querySelector(`[data-path="${CSS.escape(endpoint.path)}"]`);
+            if (card) {
+                card.classList.add('selected');
+            }
+            
+            // Exibe o painel de detalhes
+            mostrarDetalhesEndpoint(endpoint);
+        }
+
+        function atualizarListaEndpoints(endpoints) {
+            const container = document.getElementById('endpointsContainer');
+            const countSpan = document.getElementById('endpointCount');
+            
+            container.innerHTML = '';
+            currentEndpoints = endpoints;
+            countSpan.textContent = `(${endpoints.length})`;
+            
+            if (endpoints.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-text">
+                            Nenhum endpoint carregado<br>
+                            Clique em "Carregar API" para começar
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            endpoints.forEach(endpoint => {
+                const card = criarCardEndpoint(endpoint);
+                container.appendChild(card);
+            });
+        }
+
+        async function carregarEndpoints() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/endpoints`);
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    atualizarListaEndpoints(data.endpoints);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar endpoints:', error);
+            }
+        }
+
+        // ===== API Control Functions =====
+        
+        function atualizarIndicadorStatus(emExecucao) {
+            const indicador = document.getElementById('statusIndicador');
+            if (emExecucao) {
+                indicador.className = 'status-indicator status-executando';
+            } else {
+                indicador.className = 'status-indicator status-ativo';
+            }
+        }
+
+        function desabilitarBotaoExecutar(desabilitar) {
+            const btn = document.getElementById('btnExecutar');
+            const btnCancelar = document.getElementById('btnCancelar');
+            
+            if (desabilitar) {
+                btn.disabled = true;
+                btn.innerHTML = 'Executando... <span class="loading"></span>';
+                btnCancelar.classList.add('visible');
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = 'Iniciar Testes';
+                btnCancelar.classList.remove('visible');
+            }
+        }
+
+        function habilitarBotaoExecutar() {
+            const btn = document.getElementById('btnExecutar');
+            btn.disabled = false;
+        }
+
+        async function carregarAPI() {
+            const btn = document.getElementById('btnCarregar');
+            const originalHTML = btn.innerHTML;
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = 'Carregando... <span class="loading"></span>';
+                adicionarLog('📥 Carregando especificação Swagger...\n');
+
+                const response = await fetch(`${API_BASE_URL}/api/swagger/carregar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    adicionarLog(`[SUCCESS] ${data.mensagem}\n`);
+                    await carregarEndpoints();
+                    habilitarBotaoExecutar();
+                    atualizarIndicadorStatus(false);
+                } else {
+                    adicionarLog(`[ERROR] Erro: ${data.mensagem}\n`);
+                }
+            } catch (error) {
+                adicionarLog(`[ERROR] Erro ao conectar com o servidor: ${error.message}\n`);
+                document.getElementById('statusIndicador').className = 'status-indicator status-inativo';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        async function executarTestes() {
+            try {
+                adicionarLog('\n[START] Iniciando execução de testes...\n');
+                desabilitarBotaoExecutar(true);
+                atualizarIndicadorStatus(true);
+
+                const response = await fetch(`${API_BASE_URL}/api/testes/executar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    adicionarLog(`[SUCCESS] ${data.mensagem}\n`);
+                    adicionarLog('[INFO] Testes sendo executados em background...\n');
+                    
+                    // Inicia verificação automática de status
+                    iniciarVerificacaoAutomatica();
+                } else {
+                    adicionarLog(`[WARNING] ${data.mensagem}\n`);
+                    desabilitarBotaoExecutar(false);
+                    atualizarIndicadorStatus(false);
+                }
+            } catch (error) {
+                adicionarLog(`[ERROR] Erro ao conectar com o servidor: ${error.message}\n`);
+                desabilitarBotaoExecutar(false);
+                atualizarIndicadorStatus(false);
+            }
+        }
+
+        async function verificarStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/testes/status`);
+                const data = await response.json();
+
+                if (data.em_execucao) {
+                    atualizarIndicadorStatus(true);
+                    desabilitarBotaoExecutar(true);
+                } else {
+                    atualizarIndicadorStatus(false);
+                    desabilitarBotaoExecutar(false);
+                    pararVerificacaoAutomatica();
+                    
+                    if (data.ultimo_resultado) {
+                        adicionarLog('\n[SUCCESS] Testes concluídos!\n');
+                        await carregarEndpoints(); // Atualiza status dos endpoints
+                    } else if (data.erro) {
+                        adicionarLog(`\n[ERROR] Erro na execução: ${data.erro}\n`);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status:', error);
+            }
+        }
+
+        async function gerarRelatorios() {
+            try {
+                adicionarLog('\n[REPORT] Gerando relatórios...');
+                
+                // Prepara resultados agregados de todos os endpoints
+                const todosResultados = [];
+                for (const path in endpointResults) {
+                    todosResultados.push(...endpointResults[path]);
+                }
+                
+                if (todosResultados.length === 0) {
+                    adicionarLog('[WARNING] Nenhum resultado disponível para gerar relatório\n');
+                    return;
+                }
+                
+                adicionarLog(`[INFO] Enviando ${todosResultados.length} resultados para o servidor...\n`);
+
+                const response = await fetch(`${API_BASE_URL}/api/relatorios/gerar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        resultados: todosResultados
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    adicionarLog(`[SUCCESS] ${data.mensagem}\n`);
+                    adicionarLog(`\nIniciando downloads...\n`);
+                    
+                    // Baixa relatório resumido
+                    if (data.download_urls?.resumido) {
+                        adicionarLog(`- Baixando: ${data.arquivos.resumido}\n`);
+                        await downloadFile(`${API_BASE_URL}${data.download_urls.resumido}`, data.arquivos.resumido);
+                    }
+                    
+                    // Baixa relatório completo
+                    if (data.download_urls?.completo) {
+                        adicionarLog(`- Baixando: ${data.arquivos.completo}\n`);
+                        await downloadFile(`${API_BASE_URL}${data.download_urls.completo}`, data.arquivos.completo);
+                    }
+                    
+                    // Baixa relatório de falhas (se existir)
+                    if (data.download_urls?.falhas) {
+                        adicionarLog(`- Baixando: ${data.arquivos.falhas}\n`);
+                        await downloadFile(`${API_BASE_URL}${data.download_urls.falhas}`, data.arquivos.falhas);
+                    }
+                    
+                    adicionarLog(`[SUCCESS] Downloads concluídos!\n`);
+                } else {
+                    adicionarLog(`[WARNING] ${data.mensagem}\n`);
+                }
+            } catch (error) {
+                adicionarLog(`[ERROR] Erro: ${error.message}\n`);
+            }
+        }
+
+        async function downloadFile(url, filename) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                
+                // Cria um link temporário e dispara o download
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(link.href);
+            } catch (error) {
+                adicionarLog(`[ERROR] Erro ao baixar ${filename}: ${error.message}\n`);
+            }
+        }
+
+        async function cancelarTestes() {
+            if (!confirm('Tem certeza que deseja cancelar a execução dos testes?')) {
+                return;
+            }
+            
+            try {
+                adicionarLog('\n[CANCEL] Solicitando cancelamento...\n');
+
+                const response = await fetch(`${API_BASE_URL}/api/testes/cancelar`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    adicionarLog(`[SYSTEM] ${data.mensagem}\n`);
+                    desabilitarBotaoExecutar(false);
+                    atualizarIndicadorStatus(false);
+                    pararVerificacaoAutomatica();
+                } else {
+                    adicionarLog(`[WARNING] ${data.mensagem}\n`);
+                }
+            } catch (error) {
+                adicionarLog(`[ERROR] Erro: ${error.message}\n`);
+            }
+        }
+
+        // ===== Endpoint Details Functions =====
+        
+        function mostrarDetalhesEndpoint(endpoint) {
+            const detailsPanel = document.getElementById('endpointDetails');
+            const title = document.getElementById('detailsTitle');
+            const subtitle = document.getElementById('detailsSubtitle');
+            
+            // Atualiza título
+            title.textContent = endpoint.x_objeto_api || 'Endpoint';
+            subtitle.textContent = `${endpoint.path} - ${endpoint.summary || 'Sem descrição'}`;
+            
+            // Carrega parâmetros (que também atualiza as URLs de cada método)
+            carregarParametrosEndpoint(endpoint);
+            
+            // Atualiza resultados dos testes
+            atualizarResultadosTeste();
+            
+            // Atualiza resultados específicos de cada método HTTP
+            atualizarResultadosMetodo('GET');
+            atualizarResultadosMetodo('POST');
+            atualizarResultadosMetodo('PUT');
+            atualizarResultadosMetodo('DELETE');
+            
+            // Mostra o painel
+            detailsPanel.classList.add('visible');
+            
+            adicionarLog(`\n[INFO] Visualizando detalhes: ${endpoint.x_objeto_api}\n`);
+        }
+        
+        function fecharDetalhes() {
+            const detailsPanel = document.getElementById('endpointDetails');
+            detailsPanel.classList.remove('visible');
+            selectedEndpoint = null;
+            
+            // Remove seleção dos cards
+            document.querySelectorAll('.endpoint-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+        
+        async function carregarParametrosEndpoint(endpoint) {
+            try {
+                // Busca detalhes completos do endpoint incluindo parâmetros por método HTTP
+                const response = await fetch(`${API_BASE_URL}/api/endpoint/${encodeURIComponent(endpoint.path)}`);
+                const data = await response.json();
+                
+                // Armazena informações dos métodos (incluindo consumes)
+                selectedEndpointMethods = data.methods;
+                
+                // Esconde todos os containers
+                document.getElementById('getMethodContainer').style.display = 'none';
+                document.getElementById('postMethodContainer').style.display = 'none';
+                document.getElementById('putMethodContainer').style.display = 'none';
+                document.getElementById('deleteMethodContainer').style.display = 'none';
+                document.getElementById('noMethodsAvailable').style.display = 'none';
+                
+                if (data.sucesso && data.methods) {
+                    const methods = data.methods;
+                    let hasAnyMethod = false;
+                    
+                    // Processa cada método HTTP
+                    if (methods.get) {
+                        hasAnyMethod = true;
+                        document.getElementById('getMethodContainer').style.display = 'block';
+                        document.getElementById('getUrl').textContent = endpoint.path;
+                        popularParametros('getParamsBody', methods.get.parameters);
+                    }
+                    
+                    if (methods.post) {
+                        hasAnyMethod = true;
+                        document.getElementById('postMethodContainer').style.display = 'block';
+                        document.getElementById('postUrl').textContent = endpoint.path;
+                        popularParametros('postParamsBody', methods.post.parameters);
+                    }
+                    
+                    if (methods.put) {
+                        hasAnyMethod = true;
+                        document.getElementById('putMethodContainer').style.display = 'block';
+                        document.getElementById('putUrl').textContent = endpoint.path;
+                        popularParametros('putParamsBody', methods.put.parameters);
+                    }
+                    
+                    if (methods.delete) {
+                        hasAnyMethod = true;
+                        document.getElementById('deleteMethodContainer').style.display = 'block';
+                        document.getElementById('deleteUrl').textContent = endpoint.path;
+                        popularParametros('deleteParamsBody', methods.delete.parameters);
+                    }
+                    
+                    if (!hasAnyMethod) {
+                        document.getElementById('noMethodsAvailable').style.display = 'block';
+                    }
+                } else {
+                    document.getElementById('noMethodsAvailable').style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar parâmetros:', error);
+                document.getElementById('noMethodsAvailable').style.display = 'block';
+            }
+        }
+        
+        function popularParametros(tbodyId, parameters) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            
+            if (!parameters || parameters.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="no-params">Nenhum parâmetro disponível</td></tr>';
+                return;
+            }
+            
+            // Filtra apenas parâmetros de query, formData e body (remove headers)
+            const filteredParams = parameters.filter(param => 
+                param.in !== 'header' && param.in !== 'path'
+            );
+            
+            if (filteredParams.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="no-params">Nenhum parâmetro disponível</td></tr>';
+                return;
+            }
+            
+            // Mostra apenas parâmetros relevantes
+            filteredParams.forEach(param => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td style="text-align: center;">
+                        <input type="checkbox" 
+                               checked 
+                               data-param-name="${param.name}">
+                    </td>
+                    <td>${param.name}</td>
+                    <td>
+                        <input type="text" 
+                               value="" 
+                               placeholder="${param.required ? 'Obrigatório' : 'Opcional'}" 
+                               data-param-name="${param.name}">
+                    </td>
+                `;
+            });
+        }
+        
+        function atualizarResultadosTeste() {
+            // Atualiza o container global de resultados
+            const container = document.getElementById('testResultsContainer');
+            
+            if (!selectedEndpoint || !endpointResults[selectedEndpoint.path] || 
+                endpointResults[selectedEndpoint.path].length === 0) {
+                container.innerHTML = '<div class="no-results">Nenhum resultado disponível</div>';
+                return;
+            }
+            
+            const results = endpointResults[selectedEndpoint.path];
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-item';
+                
+                // Format test type (like complete report)
+                let tipoTesteFormatado = result.test_type || 'Teste';
+                if (tipoTesteFormatado.startsWith('crud_')) {
+                    const method = tipoTesteFormatado.replace('crud_', '').split('_')[0].toUpperCase();
+                    tipoTesteFormatado = method;
+                } else {
+                    tipoTesteFormatado = tipoTesteFormatado.replace(/_/g, ' ').split(' ').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    ).join(' ');
+                }
+                
+                const statusClass = result.success ? 'success' : (result.skipped ? 'skipped' : 'failure');
+                const statusText = result.success ? 'Sucesso' : (result.skipped ? 'Pulado' : 'Verificar');
+                
+                // Build detailed HTML like complete report
+                let detailsHTML = `
+                    <div class="result-header">
+                        <div class="result-name"><strong>ENDPOINT:</strong> ${result.endpoint || selectedEndpoint.x_objeto_api}</div>
+                        <div class="result-status ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="result-body">
+                        <div><strong>TIPO DE TESTE:</strong> ${tipoTesteFormatado}</div>
+                        <div><strong>MÉTODO:</strong> ${result.method || 'N/A'}</div>
+                `;
+                
+                // Parameters
+                if (result.params && Object.keys(result.params).length > 0) {
+                    detailsHTML += `<div><strong>PARÂMETROS (query):</strong> ${JSON.stringify(result.params, null, 2)}</div>`;
+                }
+                
+                // Body
+                if (result.body && Object.keys(result.body).length > 0) {
+                    detailsHTML += `<div><strong>BODY (formData):</strong> ${JSON.stringify(result.body, null, 2)}</div>`;
+                }
+                
+                // Status
+                if (result.skipped) {
+                    detailsHTML += `<div><strong>STATUS:</strong> PULADO</div>`;
+                    detailsHTML += `<div><strong>MOTIVO:</strong> ${result.skip_message || 'Parâmetro obrigatório'}</div>`;
+                } else {
+                    detailsHTML += `<div class="result-code"><strong>STATUS HTTP:</strong> ${result.status_code || 'N/A'}</div>`;
+                    detailsHTML += `<div><strong>TEMPO DE RESPOSTA:</strong> ${result.response_time_ms || 'N/A'}ms</div>`;
+                    detailsHTML += `<div><strong>STATUS DO TESTE:</strong> ${statusText}</div>`;
+                    
+                    // Response data
+                    if (result.data) {
+                        const dataStr = typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
+                        const truncatedData = dataStr.length > 500 ? dataStr.substring(0, 500) + '...' : dataStr;
+                        detailsHTML += `<div style="margin-top: 10px;"><strong>RESPOSTA:</strong><pre style="background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px;">${truncatedData}</pre></div>`;
+                    }
+                    
+                    if (result.error) {
+                        detailsHTML += `<div style="color: #fc8181; margin-top: 5px;"><strong>ERRO:</strong> ${result.error}</div>`;
+                    }
+                }
+                
+                detailsHTML += `</div>`;
+                resultDiv.innerHTML = detailsHTML;
+                container.appendChild(resultDiv);
+            });
+        }
+        
+        function atualizarResultadosMetodo(method) {
+            // Atualiza o container de resultados específico do método
+            const methodLower = method.toLowerCase();
+            const resultsDiv = document.getElementById(`${methodLower}Results`);
+            if (!resultsDiv) return;
+            
+            const container = resultsDiv.querySelector('.results-container');
+            
+            if (!selectedEndpoint || !endpointResults[selectedEndpoint.path] || 
+                endpointResults[selectedEndpoint.path].length === 0) {
+                container.innerHTML = '<div class="no-results">Nenhum resultado disponível</div>';
+                return;
+            }
+            
+            // Filtra resultados por método (deve haver apenas um resultado por método)
+            const results = endpointResults[selectedEndpoint.path]
+                .filter(result => result.method === method);
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="no-results">Nenhum resultado disponível</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-item';
+                
+                // Format test type (like complete report)
+                let tipoTesteFormatado = result.test_type || 'Teste';
+                if (tipoTesteFormatado.startsWith('crud_')) {
+                    const methodName = tipoTesteFormatado.replace('crud_', '').split('_')[0].toUpperCase();
+                    tipoTesteFormatado = methodName;
+                } else {
+                    tipoTesteFormatado = tipoTesteFormatado.replace(/_/g, ' ').split(' ').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    ).join(' ');
+                }
+                
+                const statusClass = result.success ? 'success' : (result.skipped ? 'skipped' : 'failure');
+                const statusText = result.success ? 'Sucesso' : (result.skipped ? 'Pulado' : 'Verificar');
+                
+                // Build detailed HTML like complete report
+                let detailsHTML = `
+                    <div class="result-header">
+                        <div class="result-name"><strong>ENDPOINT:</strong> ${result.endpoint || selectedEndpoint.x_objeto_api}</div>
+                        <div class="result-status ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="result-body">
+                        <div><strong>TIPO DE TESTE:</strong> ${tipoTesteFormatado}</div>
+                        <div><strong>MÉTODO:</strong> ${result.method || 'N/A'}</div>
+                `;
+                
+                // Parameters
+                if (result.params && Object.keys(result.params).length > 0) {
+                    detailsHTML += `<div><strong>PARÂMETROS (query):</strong> ${JSON.stringify(result.params, null, 2)}</div>`;
+                }
+                
+                // Body
+                if (result.body && Object.keys(result.body).length > 0) {
+                    detailsHTML += `<div><strong>BODY (formData):</strong> ${JSON.stringify(result.body, null, 2)}</div>`;
+                }
+                
+                // Status
+                if (result.skipped) {
+                    detailsHTML += `<div><strong>STATUS:</strong> PULADO</div>`;
+                    detailsHTML += `<div><strong>MOTIVO:</strong> ${result.skip_message || 'Parâmetro obrigatório'}</div>`;
+                } else {
+                    detailsHTML += `<div class="result-code"><strong>STATUS HTTP:</strong> ${result.status_code || 'N/A'}</div>`;
+                    detailsHTML += `<div><strong>TEMPO DE RESPOSTA:</strong> ${result.response_time_ms || 'N/A'}ms</div>`;
+                    detailsHTML += `<div><strong>STATUS DO TESTE:</strong> ${statusText}</div>`;
+                    
+                    // Response data
+                    if (result.data) {
+                        const dataStr = typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
+                        const truncatedData = dataStr.length > 500 ? dataStr.substring(0, 500) + '...' : dataStr;
+                        detailsHTML += `<div style="margin-top: 10px;"><strong>RESPOSTA:</strong><pre style="background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px;">${truncatedData}</pre></div>`;
+                    }
+                    
+                    if (result.error) {
+                        detailsHTML += `<div style="color: #fc8181; margin-top: 5px;"><strong>ERRO:</strong> ${result.error}</div>`;
+                    }
+                }
+                
+                detailsHTML += `</div>`;
+                resultDiv.innerHTML = detailsHTML;
+                container.appendChild(resultDiv);
+            });
+            
+            // Auto-scroll para o topo (primeiro resultado = mais recente)
+            container.scrollTop = 0;
+        }
+        
+        async function enviarTesteManual(method) {
+            if (!selectedEndpoint) {
+                adicionarLog('[ERROR] Nenhum endpoint selecionado\n');
+                return;
+            }
+            
+            // Determina o container e botão apropriado
+            const methodLower = method.toLowerCase();
+            const tbodyId = `${methodLower}ParamsBody`;
+            const buttonId = `send${method.charAt(0).toUpperCase() + method.slice(1).toLowerCase()}Button`;
+            
+            const tbody = document.getElementById(tbodyId);
+            const sendButton = document.getElementById(buttonId);
+            
+            // Coleta parâmetros (apenas os que estão habilitados via checkbox)
+            const rows = tbody.querySelectorAll('tr');
+            const params = {};
+            
+            rows.forEach(row => {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                const textInput = row.querySelector('input[type="text"]');
+                
+                if (checkbox && checkbox.checked && textInput) {
+                    const paramName = textInput.getAttribute('data-param-name');
+                    const paramValue = textInput.value.trim();
+                    
+                    if (paramName) {
+                        params[paramName] = paramValue;
+                    }
+                }
+            });
+            
+            try {
+                sendButton.disabled = true;
+                sendButton.textContent = 'Enviando...';
+                adicionarLog(`\n[MANUAL] Enviando teste manual: ${method} ${selectedEndpoint.path}\n`);
+                adicionarLog(`[MANUAL] Parâmetros: ${JSON.stringify(params, null, 2)}\n`);
+                
+                // Obtém informação de consumes do método, se disponível
+                const methodLowerCase = method.toLowerCase();
+                const consumes = selectedEndpointMethods && selectedEndpointMethods[methodLowerCase] 
+                    ? selectedEndpointMethods[methodLowerCase].consumes 
+                    : [];
+                
+                const response = await fetch(`${API_BASE_URL}/api/teste/manual`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        path: selectedEndpoint.path,
+                        method: method,
+                        parameters: params,
+                        consumes: consumes
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.sucesso) {
+                    adicionarLog(`[SUCCESS] Teste completado\n`);
+                    adicionarLog(`Status HTTP: ${data.resultado.status_code}\n`);
+                    adicionarLog(`Tempo de resposta: ${data.resultado.response_time_ms}ms\n`);
+                    if (data.resultado.data) {
+                        adicionarLog(`Resposta: ${JSON.stringify(data.resultado.data, null, 2)}\n`);
+                    }
+                    
+                    // Adiciona ou atualiza resultado na lista (apenas o mais recente por método)
+                    if (!endpointResults[selectedEndpoint.path]) {
+                        endpointResults[selectedEndpoint.path] = [];
+                    }
+                    
+                    // Determina se são params ou body baseado no método
+                    const isBodyMethod = method === 'POST' || method === 'PUT';
+                    
+                    const novoResultado = {
+                        endpoint: selectedEndpoint.x_objeto_api,
+                        test_type: 'manual',
+                        method: method,
+                        params: isBodyMethod ? {} : params,
+                        body: isBodyMethod ? params : {},
+                        success: data.resultado.success,
+                        status_code: data.resultado.status_code,
+                        response_time_ms: data.resultado.response_time_ms,
+                        data: data.resultado.data,
+                        error: data.resultado.error,
+                        skipped: false
+                    };
+                    
+                    // Encontra e substitui resultado existente para o mesmo método, ou adiciona novo
+                    const existingIndex = endpointResults[selectedEndpoint.path].findIndex(
+                        r => r.method === method
+                    );
+                    
+                    if (existingIndex >= 0) {
+                        endpointResults[selectedEndpoint.path][existingIndex] = novoResultado;
+                        adicionarLog(`[UPDATE] Resultado atualizado para ${method}\n`);
+                    } else {
+                        endpointResults[selectedEndpoint.path].push(novoResultado);
+                    }
+                    
+                    // Calcula e atualiza o status do endpoint baseado nos resultados
+                    const novoStatus = calcularStatusEndpoint(selectedEndpoint.path);
+                    atualizarStatusEndpoint(selectedEndpoint.path, novoStatus);
+                    
+                    atualizarResultadosTeste();
+                    atualizarResultadosMetodo(method);
+                } else {
+                    adicionarLog(`[ERROR] ${data.mensagem || 'Erro ao executar teste'}\n`);
+                }
+            } catch (error) {
+                adicionarLog(`[ERROR] Erro: ${error.message}\n`);
+            } finally {
+                sendButton.disabled = false;
+                sendButton.textContent = 'Enviar';
+            }
+        }
+
+        // ===== Auto-update Functions =====
+        
+        function iniciarVerificacaoAutomatica() {
+            if (intervalStatus) {
+                clearInterval(intervalStatus);
+            }
+            
+            // Verifica o status a cada 3 segundos
+            intervalStatus = setInterval(verificarStatus, 3000);
+        }
+
+        function pararVerificacaoAutomatica() {
+            if (intervalStatus) {
+                clearInterval(intervalStatus);
+                intervalStatus = null;
+            }
+        }
+
+        async function verificarSaudeInicial() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/saude`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    adicionarLog(`[SYSTEM] Servidor conectado: ${data.servico} v${data.versao}\n`);
+                    adicionarLog('[SYSTEM] Pronto para carregar API!\n');
+                    document.getElementById('statusIndicador').className = 'status-indicator status-ativo';
+                } else {
+                    throw new Error('Servidor não respondeu corretamente');
+                }
+            } catch (error) {
+                adicionarLog(`[ERROR] Erro ao conectar com o servidor: ${error.message}\n`);
+                adicionarLog(`   Verifique se o servidor está rodando em ${API_BASE_URL}\n`);
+                document.getElementById('statusIndicador').className = 'status-indicator status-inativo';
+            }
+        }
+
+        // ===== Initialization =====
+        
+        window.addEventListener('load', () => {
+            conectarWebSocket();
+            verificarSaudeInicial();
+            // Tenta carregar endpoints existentes
+            carregarEndpoints();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            pararVerificacaoAutomatica();
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

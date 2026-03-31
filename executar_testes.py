@@ -4,6 +4,11 @@ Orquestra a execução completa de testes GET ou CRUD.
 """
 import sys
 
+# Callback global para atualização de status (usado pelo servidor Flask)
+STATUS_CALLBACK = None
+SHOULD_CANCEL = None  # Função para verificar se deve cancelar
+RESULT_CALLBACK = None  # Callback para enviar resultados dos testes
+
 try:
     from configuracao import (
         REQUEST_DELAY_SECONDS,
@@ -99,6 +104,8 @@ def main():
     
     print()
     print("Testes concluídos!")
+    
+    return arquivos_salvos
 
 
 def _executar_modo_crud(spec: dict, headers: dict, relatorio: RelatorioIncremental) -> None:
@@ -128,15 +135,63 @@ def _executar_modo_crud(spec: dict, headers: dict, relatorio: RelatorioIncrement
     
     # Executa testes CRUD
     for endpoint in endpoints:
+        # Verifica se deve cancelar
+        if SHOULD_CANCEL and SHOULD_CANCEL():
+            print("\n[CANCEL] Cancelamento solicitado. Parando execução...")
+            break
+        
+        nome_endpoint = obter_nome_endpoint(endpoint)
+        x_objeto_api = endpoint.get("x_objeto_api", "")
+        
+        # Notifica início do teste
+        if STATUS_CALLBACK:
+            STATUS_CALLBACK(endpoint["path"], "testing", x_objeto_api)
+        
         resultados = testar_endpoint_crud(
             BASE_URL,
             endpoint,
             headers,
             REQUEST_DELAY_SECONDS
         )
-        # Adiciona cada resultado ao relatório em tempo real
+        
+        # Determina status final baseado nos resultados
+        status_final = "success"
         for resultado in resultados:
             relatorio.adicionar_resultado(resultado)
+            result_data = resultado.get("result", {})
+            if not result_data.get("success", True):
+                status_final = "failure"
+            
+            # Envia resultado individual via callback
+            if RESULT_CALLBACK:
+                # Extrai método HTTP do test_type (ex: crud_post -> POST)
+                test_type = resultado.get("test_type", "")
+                method = "CRUD"
+                if test_type.startswith("crud_"):
+                    method = test_type.replace("crud_", "").split("_")[0].upper()
+                
+                RESULT_CALLBACK(
+                    endpoint["path"],
+                    {
+                        "endpoint": resultado.get("endpoint", ""),
+                        "test_type": resultado.get("test_type", "teste"),
+                        "method": method,
+                        "params": resultado.get("params", {}),
+                        "body": resultado.get("body", {}),
+                        "success": result_data.get("success", False),
+                        "status_code": result_data.get("status_code"),
+                        "response_time_ms": result_data.get("response_time_ms"),
+                        "data": result_data.get("data"),
+                        "error": result_data.get("error"),
+                        "skipped": result_data.get("skipped", False),
+                        "skip_message": result_data.get("skip_message", "")
+                    }
+                )
+        
+        # Notifica conclusão do teste
+        if STATUS_CALLBACK:
+            STATUS_CALLBACK(endpoint["path"], status_final, x_objeto_api)
+        
         print()
 
 
@@ -167,15 +222,57 @@ def _executar_modo_get(spec: dict, headers: dict, relatorio: RelatorioIncrementa
     
     # Executa testes GET
     for endpoint in endpoints:
+        # Verifica se deve cancelar
+        if SHOULD_CANCEL and SHOULD_CANCEL():
+            print("\n[CANCEL] Cancelamento solicitado. Parando execução...")
+            break
+        
+        nome_endpoint = obter_nome_endpoint(endpoint)
+        x_objeto_api = endpoint.get("x_objeto_api", "")
+        
+        # Notifica início do teste
+        if STATUS_CALLBACK:
+            STATUS_CALLBACK(endpoint["path"], "testing", x_objeto_api)
+        
         resultados = testar_endpoint(
             BASE_URL,
             endpoint,
             headers,
             REQUEST_DELAY_SECONDS
         )
-        # Adiciona cada resultado ao relatório em tempo real
+        
+        # Determina status final baseado nos resultados
+        status_final = "success"
         for resultado in resultados:
             relatorio.adicionar_resultado(resultado)
+            result_data = resultado.get("result", {})
+            if not result_data.get("success", True):
+                status_final = "failure"
+            
+            # Envia resultado individual via callback
+            if RESULT_CALLBACK:
+                RESULT_CALLBACK(
+                    endpoint["path"],
+                    {
+                        "endpoint": resultado.get("endpoint", ""),
+                        "test_type": resultado.get("test_type", "teste"),
+                        "method": "GET",
+                        "params": resultado.get("params", {}),
+                        "body": resultado.get("body", {}),
+                        "success": result_data.get("success", False),
+                        "status_code": result_data.get("status_code"),
+                        "response_time_ms": result_data.get("response_time_ms"),
+                        "data": result_data.get("data"),
+                        "error": result_data.get("error"),
+                        "skipped": result_data.get("skipped", False),
+                        "skip_message": result_data.get("skip_message", "")
+                    }
+                )
+        
+        # Notifica conclusão do teste
+        if STATUS_CALLBACK:
+            STATUS_CALLBACK(endpoint["path"], status_final, x_objeto_api)
+        
         print()
 
 

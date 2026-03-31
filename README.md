@@ -30,6 +30,9 @@ O projeto foi reorganizado seguindo o princípio de **Separação de Responsabil
 #### Execução de Testes
 - **`cenarios_teste.py`** - Cenários de teste (GET simples e CRUD completo)
 - **`executar_testes.py`** - Orquestrador principal de execução
+- **`servidor_flask.py`** - Servidor Flask para execução via API REST
+- **`index.html`** - Interface web para controle dos testes
+- **`iniciar_sistema.bat`** - Script para inicialização automática do sistema
 
 #### Relatórios
 - **`gerador_relatorios.py`** - Geração e formatação de relatórios
@@ -37,6 +40,11 @@ O projeto foi reorganizado seguindo o princípio de **Separação de Responsabil
 ## Como Usar
 
 ### 1. Configuração Inicial
+
+Instale as dependências:
+```bash
+pip install -r requirements.txt
+```
 
 Copie o arquivo de exemplo e configure:
 ```bash
@@ -52,8 +60,75 @@ TEST_MODE = "GET_ONLY"  # ou "FULL_CRUD"
 
 ### 2. Executar Testes
 
+#### Modo Direto (Linha de Comando)
 ```bash
 python executar_testes.py
+```
+
+#### Modo Servidor (Via API REST)
+
+**Opção 1 - Inicialização Automática (Recomendado):**
+```bash
+iniciar_sistema.bat
+```
+Este script irá:
+- Iniciar o servidor Flask automaticamente
+- Abrir a interface web no navegador
+- Manter o servidor rodando em segundo plano
+
+**Opção 2 - Inicialização Manual:**
+```bash
+python servidor_flask.py
+```
+Depois abra o arquivo `index.html` no navegador para acessar a interface gráfica interativa.
+
+O servidor estará disponível em `http://localhost:5000` com os seguintes endpoints:
+
+**POST /api/testes/executar** - Inicia execução de testes em background
+```bash
+curl -X POST http://localhost:5000/api/testes/executar
+```
+Resposta:
+```json
+{
+  "sucesso": true,
+  "mensagem": "Execução de testes iniciada",
+  "estado": "iniciado"
+}
+```
+
+**GET /api/testes/status** - Verifica status da execução atual
+```bash
+curl http://localhost:5000/api/testes/status
+```
+Resposta (em execução):
+```json
+{
+  "em_execucao": true,
+  "ultima_execucao": "2026-02-27T10:30:00",
+  "erro": null
+}
+```
+
+**GET /api/testes/resultado** - Obtém resultado da última execução
+```bash
+curl http://localhost:5000/api/testes/resultado
+```
+Resposta:
+```json
+{
+  "sucesso": true,
+  "ultima_execucao": "2026-02-27T10:32:15",
+  "arquivos": {
+    "resumido": "relatorio_resumido_20260227_103215.txt",
+    "completo": "relatorio_completo_20260227_103215.txt"
+  }
+}
+```
+
+**GET /api/saude** - Health check do servidor
+```bash
+curl http://localhost:5000/api/saude
 ```
 
 ## Funcionalidades
@@ -211,9 +286,12 @@ Alguns endpoints requerem tratamento especial (configurados em `ENDPOINT_OVERRID
 
 ## Instalação
 
-1. Copie `configuracao.py.example` para `configuracao.py` e configure suas credenciais de API
-2. Instale as dependências: `pip install requests`
-3. Execute os testes: `python executar_testes.py`
+1. Instale as dependências: `pip install -r requirements.txt`
+2. Copie `configuracao.py.example` para `configuracao.py` e configure suas credenciais de API
+3. Execute os testes:
+   - **Mais fácil**: Execute `iniciar_sistema.bat` (abre tudo automaticamente)
+   - Modo direto: `python executar_testes.py`
+   - Modo servidor: `python servidor_flask.py` (depois abra `index.html` no navegador)
 
 ## Contribuindo
 

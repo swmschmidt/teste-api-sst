@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migração de Registros - Sistema SST</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: #e2e8f0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: #e2e8f0;
+            padding: 16px 24px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-link {
+            text-decoration: none;
+            background: #4a5568;
+            color: #e2e8f0;
+            border: 1px solid #718096;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 360px;
+            background: #252525;
+            border-right: 2px solid #3a3a3a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 14px 16px;
+            background: #2d2d2d;
+            border-bottom: 2px solid #3a3a3a;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .controls {
+            padding: 12px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .field-label {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .text-input,
+        .select-input,
+        .json-input,
+        .textarea-input {
+            width: 100%;
+            background: #2d2d2d;
+            color: #e2e8f0;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .json-input,
+        .textarea-input {
+            min-height: 90px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #5a67d8 0%, #434190 100%);
+        }
+
+        .endpoint-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .endpoint-card {
+            background: #2d2d2d;
+            border: 2px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .endpoint-card:hover {
+            border-color: #4a5568;
+        }
+
+        .endpoint-card.selected {
+            border-color: #63b3ed;
+            background: #343b46;
+        }
+
+        .card-object {
+            font-size: 11px;
+            color: #63b3ed;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .card-summary {
+            font-size: 12px;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .card-path {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #a0aec0;
+            word-break: break-all;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 14px;
+            overflow: auto;
+        }
+
+        .panel {
+            background: #252525;
+            border-radius: 8px;
+            border: 1px solid #3a3a3a;
+            padding: 14px;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #3a3a3a;
+            padding-bottom: 8px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .records-container {
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 8px;
+            background: #2d2d2d;
+        }
+
+        .record-item {
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            background: #1f1f1f;
+        }
+
+        .record-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .record-item.selected {
+            border-color: #63b3ed;
+            background: #2a3441;
+        }
+
+        .record-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #a0aec0;
+        }
+
+        .record-preview {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 80px;
+            overflow: hidden;
+        }
+
+        .status-box {
+            background: #2d2d2d;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            min-height: 60px;
+            white-space: pre-wrap;
+        }
+
+        .console {
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 180px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            color: #d4d4d4;
+        }
+
+        .empty-state {
+            color: #718096;
+            font-size: 12px;
+            text-align: center;
+            padding: 16px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-card {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 10px;
+            padding: 18px 22px;
+            min-width: 280px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-card">
+            <div class="loading-spinner"></div>
+            <div id="loadingMessage">Carregando...</div>
+        </div>
+    </div>
+
+    <div class="header">
+        <div>
+            <h1>Migração de Registros (Origem → Destino)</h1>
+            <p>Seleciona resultados de um endpoint GET e envia um POST equivalente para o endpoint de destino</p>
+        </div>
+        <div class="header-actions">
+            <a href="index.html" class="header-link">Voltar ao menu</a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header">Endpoints de Origem (GET) <span id="sourceCount">(0)</span></div>
+            <div class="controls">
+                <label class="field-label" for="sourceBaseUrl">Base URL de origem</label>
+                <input id="sourceBaseUrl" class="text-input" type="text" placeholder="http://...">
+
+                <label class="field-label" for="sourceApiKey">API Key de origem</label>
+                <input id="sourceApiKey" class="text-input" type="text" placeholder="Authorization para origem">
+
+                <label class="field-label" for="sourceQueryJson">Query params (JSON)</label>
+                <textarea id="sourceQueryJson" class="json-input" placeholder='{"chave": "valor"}'></textarea>
+
+                <div class="btn-row">
+                    <button id="btnCarregarApi" class="btn-primary" type="button">Carregar API</button>
+                </div>
+            </div>
+            <div id="sourceEndpoints" class="endpoint-list">
+                <div class="empty-state">Nenhum endpoint carregado</div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-title">Resultados da origem</div>
+                    <div id="recordsContainer" class="records-container">
+                        <div class="empty-state">Selecione um endpoint GET e clique em "Buscar resultados"</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Destino (POST)</div>
+
+                    <label class="field-label" for="destinationBaseUrl">Base URL de destino</label>
+                    <input id="destinationBaseUrl" class="text-input" type="text" placeholder="http://...">
+
+                    <label class="field-label" for="destinationApiKey">API Key de destino</label>
+                    <input id="destinationApiKey" class="text-input" type="text" placeholder="Authorization para destino">
+
+                    <label class="field-label" for="destinationEndpointPath">Endpoint de destino (POST) - automático</label>
+                    <input id="destinationEndpointPath" class="text-input" type="text" readonly placeholder="Selecione um endpoint GET para definir o destino...">
+
+                    <label class="field-label" for="destinationBody">Body do POST (JSON)</label>
+                    <textarea id="destinationBody" class="textarea-input" placeholder='{"campo": "valor"}'></textarea>
+
+                    <div class="btn-row">
+                        <button id="btnCopiarRegistro" class="btn-accent" type="button" disabled>Usar registro selecionado</button>
+                        <button id="btnEnviarPost" class="btn-success" type="button" disabled>Enviar POST</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Status da operação</div>
+                <div id="statusBox" class="status-box">Aguardando ações...</div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Log</div>
+                <div id="console" class="console"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000';
+
+        let endpoints = [];
+        let sourceGetEndpoints = [];
+        let selectedSourceEndpoint = null;
+        let selectedDestinationEndpoint = null;
+        let sourceRecords = [];
+        let selectedRecordIndex = -1;
+
+        const sourceEndpointsEl = document.getElementById('sourceEndpoints');
+        const recordsContainerEl = document.getElementById('recordsContainer');
+        const destinationEndpointPathEl = document.getElementById('destinationEndpointPath');
+        const destinationBodyEl = document.getElementById('destinationBody');
+        const statusBoxEl = document.getElementById('statusBox');
+        const consoleEl = document.getElementById('console');
+        const sourceBaseUrlEl = document.getElementById('sourceBaseUrl');
+        const destinationBaseUrlEl = document.getElementById('destinationBaseUrl');
+        const sourceApiKeyEl = document.getElementById('sourceApiKey');
+        const destinationApiKeyEl = document.getElementById('destinationApiKey');
+        const sourceQueryJsonEl = document.getElementById('sourceQueryJson');
+        const loadingOverlayEl = document.getElementById('loadingOverlay');
+        const loadingMessageEl = document.getElementById('loadingMessage');
+
+        const btnCarregarApi = document.getElementById('btnCarregarApi');
+        const btnCopiarRegistro = document.getElementById('btnCopiarRegistro');
+        const btnEnviarPost = document.getElementById('btnEnviarPost');
+
+        function showLoading(message) {
+            loadingMessageEl.textContent = message || 'Carregando...';
+            loadingOverlayEl.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlayEl.classList.add('hidden');
+        }
+
+        function addLog(message) {
+            const now = new Date().toLocaleTimeString();
+            consoleEl.textContent += `[${now}] ${message}\n`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function setStatus(message) {
+            statusBoxEl.textContent = message;
+        }
+
+        function parseJsonSafe(value, fieldName) {
+            const text = (value || '').trim();
+            if (!text) {
+                return {};
+            }
+            try {
+                const parsed = JSON.parse(text);
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    return parsed;
+                }
+                throw new Error(`${fieldName} deve ser um objeto JSON.`);
+            } catch (error) {
+                throw new Error(`${fieldName} inválido: ${error.message}`);
+            }
+        }
+
+        function parsePossibleJsonString(value) {
+            if (typeof value !== 'string') {
+                return value;
+            }
+
+            const trimmed = value.trim();
+            if (!trimmed) {
+                return value;
+            }
+
+            if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+                (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+                try {
+                    return corrigirEncodingRecursivo(JSON.parse(trimmed));
+                } catch (_) {
+                    return tentarCorrigirEncodingTexto(value);
+                }
+            }
+
+            return tentarCorrigirEncodingTexto(value);
+        }
+
+        function contarPadroesMojibake(texto) {
+            if (!texto) return 0;
+
+            const padroes = texto.match(/Ã.|Â.|â.|ð|Ð|�/g);
+            const qtdPadroes = padroes ? padroes.length : 0;
+
+            let qtdControles = 0;
+            for (let i = 0; i < texto.length; i++) {
+                const code = texto.charCodeAt(i);
+                if (code >= 0x80 && code <= 0x9F) {
+                    qtdControles += 1;
+                }
+            }
+
+            return qtdPadroes + qtdControles;
+        }
+
+        function decodeLatin1BytesAsUtf8(texto) {
+            const bytes = Uint8Array.from(Array.from(texto).map(char => char.charCodeAt(0) & 0xFF));
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+
+        function decodeViaEscape(texto) {
+            return decodeURIComponent(escape(texto));
+        }
+
+        function decodificarSequenciaPrefixada(texto, prefixo, bytePrefixo, quantidadeBytesVariaveis) {
+            if (!texto || typeof texto !== 'string') {
+                return texto;
+            }
+
+            if (quantidadeBytesVariaveis === 1) {
+                const regex = new RegExp(`${prefixo}([\\u0080-\\u00BF])`, 'g');
+                return texto.replace(regex, (_, segundoChar) => {
+                    try {
+                        const segundoByte = segundoChar.charCodeAt(0) & 0xFF;
+                        return new TextDecoder('utf-8').decode(new Uint8Array([bytePrefixo, segundoByte]));
+                    } catch (_) {
+                        return `${prefixo}${segundoChar}`;
+                    }
+                });
+            }
+
+            const regex = new RegExp(`${prefixo}([\\u0080-\\u00BF])([\\u0080-\\u00BF])`, 'g');
+            return texto.replace(regex, (_, segundoChar, terceiroChar) => {
+                try {
+                    const segundoByte = segundoChar.charCodeAt(0) & 0xFF;
+                    const terceiroByte = terceiroChar.charCodeAt(0) & 0xFF;
+                    return new TextDecoder('utf-8').decode(new Uint8Array([bytePrefixo, segundoByte, terceiroByte]));
+                } catch (_) {
+                    return `${prefixo}${segundoChar}${terceiroChar}`;
+                }
+            });
+        }
+
+        function aplicarCorrecoesComunsMojibake(texto) {
+            if (typeof texto !== 'string' || !texto) {
+                return texto;
+            }
+
+            let saida = texto;
+
+            // Casos comuns de byte quebrado exibido como caractere de substituição
+            // (ex.: IMPROVÃ�VEL => IMPROVÁVEL)
+            const correcoesDiretas = {
+                'Ã�': 'Á',
+                'Ã‰': 'É',
+                'Ã\u008D': 'Í',
+                'Ã“': 'Ó',
+                'Ãš': 'Ú',
+                'Ã ': 'à',
+                'Ã¡': 'á',
+                'Ã¢': 'â',
+                'Ã£': 'ã',
+                'Ã¤': 'ä',
+                'Ã¨': 'è',
+                'Ã©': 'é',
+                'Ãª': 'ê',
+                'Ã«': 'ë',
+                'Ã¬': 'ì',
+                'Ã­': 'í',
+                'Ã®': 'î',
+                'Ã¯': 'ï',
+                'Ã²': 'ò',
+                'Ã³': 'ó',
+                'Ã´': 'ô',
+                'Ãµ': 'õ',
+                'Ã¶': 'ö',
+                'Ã¹': 'ù',
+                'Ãº': 'ú',
+                'Ã»': 'û',
+                'Ã¼': 'ü',
+                'Ã§': 'ç'
+            };
+
+            Object.entries(correcoesDiretas).forEach(([de, para]) => {
+                saida = saida.split(de).join(para);
+            });
+
+            // Corrige sequências UTF-8 interpretadas como Latin-1/Windows-1252
+            saida = decodificarSequenciaPrefixada(saida, 'Ã', 0xC3, 1);
+            saida = decodificarSequenciaPrefixada(saida, 'Â', 0xC2, 1);
+            saida = decodificarSequenciaPrefixada(saida, 'â', 0xE2, 2);
+
+            return saida;
+        }
+
+        function tentarCorrigirEncodingTexto(texto) {
+            if (typeof texto !== 'string' || !texto) {
+                return texto;
+            }
+
+            let melhor = aplicarCorrecoesComunsMojibake(texto);
+
+            for (let rodada = 0; rodada < 3; rodada++) {
+                const candidatos = [melhor];
+
+                try {
+                    candidatos.push(decodeLatin1BytesAsUtf8(melhor));
+                } catch (_) {
+                    // ignora
+                }
+
+                try {
+                    candidatos.push(decodeViaEscape(melhor));
+                } catch (_) {
+                    // ignora
+                }
+
+                let escolhido = melhor;
+                let melhorScore = contarPadroesMojibake(melhor);
+
+                for (const candidato of candidatos) {
+                    if (typeof candidato !== 'string' || !candidato) continue;
+                    const score = contarPadroesMojibake(candidato);
+                    if (score < melhorScore) {
+                        melhorScore = score;
+                        escolhido = candidato;
+                    }
+                }
+
+                if (escolhido === melhor) {
+                    break;
+                }
+
+                melhor = aplicarCorrecoesComunsMojibake(escolhido);
+            }
+
+            return aplicarCorrecoesComunsMojibake(melhor);
+        }
+
+        function corrigirEncodingRecursivo(valor) {
+            if (typeof valor === 'string') {
+                return tentarCorrigirEncodingTexto(valor);
+            }
+
+            if (Array.isArray(valor)) {
+                return valor.map(item => corrigirEncodingRecursivo(item));
+            }
+
+            if (valor && typeof valor === 'object') {
+                const saida = {};
+                Object.entries(valor).forEach(([chave, item]) => {
+                    saida[chave] = corrigirEncodingRecursivo(item);
+                });
+                return saida;
+            }
+
+            return valor;
+        }
+
+        function normalizeRecords(data) {
+            if (Array.isArray(data)) {
+                return data.map((record, index) => ({
+                    key: `Item_${String(index).padStart(6, '0')}`,
+                    payload: parsePossibleJsonString(record)
+                }));
+            }
+
+            if (data && typeof data === 'object') {
+                const keyFields = Object.keys(data).filter(key => /^Key_\d+$/i.test(key));
+                if (keyFields.length > 0) {
+                    return keyFields
+                        .sort()
+                        .map(key => ({
+                            key,
+                            payload: parsePossibleJsonString(data[key])
+                        }));
+                }
+
+                if (Array.isArray(data.items)) {
+                    return data.items.map((record, index) => ({
+                        key: `items_${String(index).padStart(6, '0')}`,
+                        payload: parsePossibleJsonString(record)
+                    }));
+                }
+                if (Array.isArray(data.registros)) {
+                    return data.registros.map((record, index) => ({
+                        key: `registros_${String(index).padStart(6, '0')}`,
+                        payload: parsePossibleJsonString(record)
+                    }));
+                }
+                if (Array.isArray(data.data)) {
+                    return data.data.map((record, index) => ({
+                        key: `data_${String(index).padStart(6, '0')}`,
+                        payload: parsePossibleJsonString(record)
+                    }));
+                }
+                if (Array.isArray(data.resultados)) {
+                    return data.resultados.map((record, index) => ({
+                        key: `resultados_${String(index).padStart(6, '0')}`,
+                        payload: parsePossibleJsonString(record)
+                    }));
+                }
+
+                return [{
+                    key: 'Object_000000',
+                    payload: data
+                }];
+            }
+
+            return [];
+        }
+
+        function recordPreview(record) {
+            const json = JSON.stringify(record, null, 2);
+            return json.length > 240 ? `${json.slice(0, 240)}...` : json;
+        }
+
+        function updateDestinationFromSelection() {
+            selectedDestinationEndpoint = null;
+            destinationEndpointPathEl.value = '';
+
+            if (!selectedSourceEndpoint) {
+                btnEnviarPost.disabled = true;
+                return;
+            }
+
+            if (selectedSourceEndpoint.methods?.post) {
+                selectedDestinationEndpoint = selectedSourceEndpoint;
+                destinationEndpointPathEl.value = selectedSourceEndpoint.path;
+                addLog(`Destino automático definido: ${selectedSourceEndpoint.path}`);
+                btnEnviarPost.disabled = !destinationBodyEl.value.trim();
+                return;
+            }
+
+            destinationEndpointPathEl.value = `${selectedSourceEndpoint.path} (POST não disponível)`;
+            btnEnviarPost.disabled = true;
+            addLog(`Endpoint ${selectedSourceEndpoint.path} não possui método POST para destino.`);
+        }
+
+        function normalizarTextoComparacao(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^A-Za-z0-9.]+/g, '_')
+                .toUpperCase();
+        }
+
+        function removerPrefixosRuido(tokens) {
+            const ruido = new Set(['P', 'IN', 'OUT', 'PARAM', 'PARAMS', 'FIELD', 'FLD']);
+            const copia = [...tokens];
+            while (copia.length > 1 && ruido.has(copia[0])) {
+                copia.shift();
+            }
+            return copia;
+        }
+
+        function criarAssinaturaCampo(nomeCampo) {
+            const texto = normalizarTextoComparacao(nomeCampo);
+            const partes = texto.split('.');
+            const cauda = partes[partes.length - 1] || texto;
+
+            const tokenizar = valor => removerPrefixosRuido(valor.split('_').filter(Boolean));
+
+            const tokensFull = tokenizar(texto);
+            const tokensTail = tokenizar(cauda);
+
+            return {
+                raw: String(nomeCampo || ''),
+                rawLower: String(nomeCampo || '').toLowerCase(),
+                full: tokensFull.join(''),
+                tail: tokensTail.join(''),
+                tokensTail
+            };
+        }
+
+        function calcularScoreCampo(destSig, srcSig) {
+            if (destSig.rawLower === srcSig.rawLower) {
+                return 1000;
+            }
+
+            const pares = [
+                [destSig.tail, srcSig.tail],
+                [destSig.tail, srcSig.full],
+                [destSig.full, srcSig.tail],
+                [destSig.full, srcSig.full]
+            ];
+
+            let melhor = 0;
+            for (const [dest, src] of pares) {
+                if (!dest || !src) continue;
+                if (dest === src) {
+                    melhor = Math.max(melhor, 900);
+                    continue;
+                }
+                if (src.endsWith(dest)) {
+                    melhor = Math.max(melhor, 800);
+                    continue;
+                }
+                if (dest.endsWith(src)) {
+                    melhor = Math.max(melhor, 650);
+                    continue;
+                }
+            }
+
+            if (melhor >= 650) {
+                return melhor;
+            }
+
+            const destTokens = new Set(destSig.tokensTail);
+            const srcTokens = new Set(srcSig.tokensTail);
+            if (!destTokens.size || !srcTokens.size) {
+                return melhor;
+            }
+
+            let intersecao = 0;
+            for (const token of destTokens) {
+                if (srcTokens.has(token)) intersecao += 1;
+            }
+
+            if (intersecao === 0) {
+                return melhor;
+            }
+
+            const cobertura = intersecao / Math.max(destTokens.size, srcTokens.size);
+            return Math.max(melhor, Math.floor(400 + (cobertura * 300)));
+        }
+
+        function obterCamposPostDestino() {
+            const parametros = selectedDestinationEndpoint?.methods?.post?.parameters || [];
+            return parametros
+                .filter(param => param && param.name && param.in !== 'header' && param.in !== 'path')
+                .map(param => param.name);
+        }
+
+        function montarBodyMapeado(registro) {
+            if (!registro || typeof registro !== 'object' || Array.isArray(registro)) {
+                return {};
+            }
+
+            const camposDestino = obterCamposPostDestino();
+            if (camposDestino.length === 0) {
+                return { ...registro };
+            }
+
+            const entriesOrigem = Object.entries(registro).map(([nome, valor]) => ({
+                nome,
+                valor,
+                sig: criarAssinaturaCampo(nome)
+            }));
+
+            const corpo = {};
+            let camposMapeados = 0;
+
+            camposDestino.forEach(campoDestino => {
+                const destSig = criarAssinaturaCampo(campoDestino);
+                let melhorValor = undefined;
+                let melhorScore = -1;
+
+                entriesOrigem.forEach(entry => {
+                    const score = calcularScoreCampo(destSig, entry.sig);
+                    if (score > melhorScore) {
+                        melhorScore = score;
+                        melhorValor = entry.valor;
+                    }
+                });
+
+                if (melhorScore >= 650) {
+                    corpo[campoDestino] = melhorValor;
+                    camposMapeados += 1;
+                }
+            });
+
+            if (camposMapeados === 0) {
+                return { ...registro };
+            }
+
+            addLog(`Mapeamento Swagger: ${camposMapeados}/${camposDestino.length} campos do POST preenchidos automaticamente.`);
+            return corpo;
+        }
+
+        function aplicarRegistroSelecionadoNoBody() {
+            if (selectedRecordIndex < 0 || !sourceRecords[selectedRecordIndex]) {
+                setStatus('Selecione um registro para montar o body de destino.');
+                return;
+            }
+
+            const registro = sourceRecords[selectedRecordIndex].payload;
+            const bodyMapeado = montarBodyMapeado(registro);
+            destinationBodyEl.value = JSON.stringify(bodyMapeado, null, 2);
+            btnEnviarPost.disabled = !selectedDestinationEndpoint;
+            setStatus(`Body atualizado automaticamente com o registro #${selectedRecordIndex + 1}.`);
+            addLog(`Body atualizado automaticamente a partir do registro selecionado.`);
+        }
+
+        function renderSourceEndpoints() {
+            sourceEndpointsEl.innerHTML = '';
+            document.getElementById('sourceCount').textContent = `(${sourceGetEndpoints.length})`;
+
+            if (sourceGetEndpoints.length === 0) {
+                sourceEndpointsEl.innerHTML = '<div class="empty-state">Nenhum endpoint GET encontrado</div>';
+                return;
+            }
+
+            sourceGetEndpoints.forEach(endpoint => {
+                const card = document.createElement('div');
+                card.className = `endpoint-card${selectedSourceEndpoint && selectedSourceEndpoint.path === endpoint.path ? ' selected' : ''}`;
+                card.innerHTML = `
+                    <div class="card-object">${endpoint.x_objeto_api || 'N/A'}</div>
+                    <div class="card-summary">${endpoint.summary || 'Sem descrição'}</div>
+                    <div class="card-path">${endpoint.path}</div>
+                `;
+                card.onclick = () => {
+                    selectedSourceEndpoint = endpoint;
+                    selectedRecordIndex = -1;
+                    sourceRecords = [];
+                    renderSourceEndpoints();
+                    renderRecords();
+                    btnCopiarRegistro.disabled = true;
+                    updateDestinationFromSelection();
+                    setStatus(`Endpoint de origem selecionado: ${endpoint.path}`);
+                    buscarResultadosOrigem();
+                };
+                sourceEndpointsEl.appendChild(card);
+            });
+        }
+
+        function renderRecords() {
+            recordsContainerEl.innerHTML = '';
+
+            if (!sourceRecords.length) {
+                recordsContainerEl.innerHTML = '<div class="empty-state">Nenhum registro carregado</div>';
+                return;
+            }
+
+            sourceRecords.forEach((record, index) => {
+                const item = document.createElement('div');
+                item.className = `record-item${selectedRecordIndex === index ? ' selected' : ''}`;
+
+                const payload = record.payload;
+                const fieldCount = payload && typeof payload === 'object' && !Array.isArray(payload)
+                    ? Object.keys(payload).length
+                    : 0;
+
+                item.innerHTML = `
+                    <div class="record-item-header">
+                        <span>${record.key || `Registro #${index + 1}`}</span>
+                        <span>${fieldCount} campos</span>
+                    </div>
+                    <div class="record-preview">${recordPreview(payload)}</div>
+                `;
+                item.onclick = () => {
+                    selectedRecordIndex = index;
+                    renderRecords();
+                    btnCopiarRegistro.disabled = false;
+                    setStatus(`Registro #${index + 1} selecionado.`);
+                    aplicarRegistroSelecionadoNoBody();
+                };
+                recordsContainerEl.appendChild(item);
+            });
+        }
+
+        async function carregarConfigPadrao() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/migracao/config`);
+                const data = await response.json();
+                if (response.ok && data.sucesso) {
+                    sourceBaseUrlEl.value = data.base_url_padrao || '';
+                    destinationBaseUrlEl.value = data.base_url_padrao || '';
+                    sourceApiKeyEl.value = data.api_key_padrao || '';
+                    destinationApiKeyEl.value = data.api_key_padrao || '';
+                }
+            } catch (error) {
+                addLog(`Falha ao carregar config padrão: ${error.message}`);
+            }
+        }
+
+        async function carregarApi() {
+            btnCarregarApi.disabled = true;
+            btnCarregarApi.textContent = 'Carregando...';
+            setStatus('Carregando endpoints da API...');
+            addLog('Carregando especificação Swagger...');
+            showLoading('Carregando Swagger e endpoints...');
+
+            try {
+                const loadResponse = await fetch(`${API_BASE_URL}/api/swagger/carregar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const loadData = await loadResponse.json();
+                if (!loadResponse.ok || !loadData.sucesso) {
+                    throw new Error(loadData.mensagem || 'Falha ao carregar Swagger.');
+                }
+
+                const endpointsResponse = await fetch(`${API_BASE_URL}/api/endpoints`);
+                const endpointsData = await endpointsResponse.json();
+                if (!endpointsResponse.ok || !endpointsData.sucesso) {
+                    throw new Error(endpointsData.mensagem || 'Falha ao obter endpoints.');
+                }
+
+                endpoints = endpointsData.endpoints || [];
+                sourceGetEndpoints = endpoints.filter(ep => ep.methods && ep.methods.get);
+
+                renderSourceEndpoints();
+
+                setStatus(`Endpoints carregados: ${endpoints.length}. GET: ${sourceGetEndpoints.length}`);
+                addLog(`Endpoints carregados com sucesso (${endpoints.length}).`);
+            } catch (error) {
+                setStatus(`Erro: ${error.message}`);
+                addLog(`Erro no carregamento: ${error.message}`);
+            } finally {
+                btnCarregarApi.disabled = false;
+                btnCarregarApi.textContent = 'Carregar API';
+                hideLoading();
+            }
+        }
+
+        async function buscarResultadosOrigem() {
+            if (!selectedSourceEndpoint) {
+                setStatus('Selecione um endpoint GET na origem.');
+                return;
+            }
+
+            let queryParams = {};
+            try {
+                queryParams = parseJsonSafe(sourceQueryJsonEl.value, 'Query params');
+            } catch (error) {
+                setStatus(error.message);
+                addLog(error.message);
+                return;
+            }
+
+            showLoading(`Buscando registros de ${selectedSourceEndpoint.path}...`);
+            addLog(`Consultando origem: GET ${selectedSourceEndpoint.path}`);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/migracao/chamada`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        base_url: sourceBaseUrlEl.value.trim(),
+                        api_key: sourceApiKeyEl.value.trim(),
+                        path: selectedSourceEndpoint.path,
+                        method: 'GET',
+                        query_params: queryParams,
+                        consumes: selectedSourceEndpoint.methods?.get?.consumes || []
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.sucesso) {
+                    throw new Error(data.mensagem || 'Erro ao buscar resultados da origem.');
+                }
+
+                const resultado = data.resultado || {};
+                if (resultado.error) {
+                    throw new Error(resultado.error);
+                }
+
+                const dadosCorrigidos = corrigirEncodingRecursivo(resultado.data);
+                sourceRecords = normalizeRecords(dadosCorrigidos);
+                selectedRecordIndex = -1;
+                renderRecords();
+                btnCopiarRegistro.disabled = sourceRecords.length === 0;
+                setStatus(`Consulta finalizada. HTTP ${resultado.status_code || 'N/A'} | Registros: ${sourceRecords.length}`);
+                addLog(`Origem respondeu HTTP ${resultado.status_code}. Registros normalizados: ${sourceRecords.length}.`);
+            } catch (error) {
+                sourceRecords = [];
+                selectedRecordIndex = -1;
+                renderRecords();
+                btnCopiarRegistro.disabled = true;
+                setStatus(`Erro ao buscar origem: ${error.message}`);
+                addLog(`Erro origem: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function copiarRegistroSelecionadoParaBody() {
+            aplicarRegistroSelecionadoNoBody();
+        }
+
+        async function enviarPostDestino() {
+            if (!selectedDestinationEndpoint) {
+                setStatus('O endpoint selecionado não possui método POST para destino.');
+                return;
+            }
+
+            const destinationPath = selectedDestinationEndpoint.path;
+
+            let body = {};
+            try {
+                body = parseJsonSafe(destinationBodyEl.value, 'Body de destino');
+            } catch (error) {
+                setStatus(error.message);
+                addLog(error.message);
+                return;
+            }
+
+            btnEnviarPost.disabled = true;
+            btnEnviarPost.textContent = 'Enviando...';
+            addLog(`Enviando POST para destino: ${destinationPath}`);
+            showLoading(`Enviando POST para ${destinationPath}...`);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/migracao/chamada`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        base_url: destinationBaseUrlEl.value.trim(),
+                        api_key: destinationApiKeyEl.value.trim(),
+                        path: destinationPath,
+                        method: 'POST',
+                        body,
+                        consumes: selectedDestinationEndpoint?.methods?.post?.consumes || []
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.sucesso) {
+                    throw new Error(data.mensagem || 'Erro ao enviar POST no destino.');
+                }
+
+                const resultado = data.resultado || {};
+                if (resultado.error) {
+                    throw new Error(resultado.error);
+                }
+
+                const respostaDestino = JSON.stringify(resultado.data || {}, null, 2);
+                setStatus(`POST enviado com sucesso. HTTP ${resultado.status_code || 'N/A'} | Tempo: ${resultado.response_time_ms || 'N/A'}ms`);
+                addLog(`Destino respondeu HTTP ${resultado.status_code}.`);
+                addLog(`Resposta destino: ${respostaDestino}`);
+            } catch (error) {
+                setStatus(`Erro no POST de destino: ${error.message}`);
+                addLog(`Erro destino: ${error.message}`);
+            } finally {
+                btnEnviarPost.disabled = false;
+                btnEnviarPost.textContent = 'Enviar POST';
+                hideLoading();
+            }
+        }
+
+        destinationBodyEl.addEventListener('input', () => {
+            btnEnviarPost.disabled = !selectedDestinationEndpoint || !destinationBodyEl.value.trim();
+        });
+
+        btnCarregarApi.addEventListener('click', carregarApi);
+        btnCopiarRegistro.addEventListener('click', copiarRegistroSelecionadoParaBody);
+        btnEnviarPost.addEventListener('click', enviarPostDestino);
+
+        window.addEventListener('load', async () => {
+            showLoading('Inicializando página de migração...');
+            await carregarConfigPadrao();
+            await carregarApi();
+            setStatus('Pronto. Clique em um endpoint para carregar automaticamente os registros.');
+            addLog('Tela de migração iniciada.');
+            hideLoading();
+        });
+    </script>
+</body>
+</html>

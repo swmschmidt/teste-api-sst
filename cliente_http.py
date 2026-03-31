@@ -111,8 +111,13 @@ def _executar_post(
         # Para multipart/form-data, usa files= (mesmo para campos não-arquivo)
         files = {k: (None, v) for k, v in body.items()} if body else None
         return requests.post(url, headers=headers, params=params, files=files)
+    elif not consumes or "application/json" in consumes or len(consumes) == 0:
+        # Usa JSON por padrão ou quando explicitamente especificado
+        import json
+        headers_with_json = {**headers, "Content-Type": "application/json"}
+        return requests.post(url, headers=headers_with_json, params=params, json=body)
     else:
-        # Usa data= para application/x-www-form-urlencoded (padrão)
+        # Usa data= para application/x-www-form-urlencoded
         return requests.post(url, headers=headers, params=params, data=body)
 
 
@@ -140,6 +145,11 @@ def _executar_put(
         # Para multipart/form-data, usa files= (mesmo para campos não-arquivo)
         files = {k: (None, v) for k, v in body.items()} if body else None
         return requests.put(url, headers=headers, params=params, files=files)
+    elif not consumes or "application/json" in consumes or len(consumes) == 0:
+        # Usa JSON por padrão ou quando explicitamente especificado
+        import json
+        headers_with_json = {**headers, "Content-Type": "application/json"}
+        return requests.put(url, headers=headers_with_json, params=params, json=body)
     else:
-        # Usa data= para application/x-www-form-urlencoded (padrão)
+        # Usa data= para application/x-www-form-urlencoded
         return requests.put(url, headers=headers, params=params, data=body)

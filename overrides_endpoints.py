@@ -52,20 +52,20 @@ OVERRIDES_ENDPOINTS = {
     "CBR_API_REST_SST_R008": {
         "substituicoes": {
             "GET": {
-                "P_SCO_ID_CONSEQUENCE": "E"
+                "P_SCO_ID_CONSEQUENCE": "189"
             },
             "POST": {
-                "P_SCO_ID_CONSEQUENCE": "E",
+                "P_SCO_ID_CONSEQUENCE": "189",
                 "SCO_NM_CONSEQUENCE": "CRÍTICO",
                 "SCO_COMMENT": "Morte ou incapacidade total permanente. (aposentadoria por invalidez)."
             },
             "PUT": {
-                "P_SCO_ID_CONSEQUENCE": "E",
+                "P_SCO_ID_CONSEQUENCE": "189",
                 "SCO_NM_CONSEQUENCE": "CRÍTICO",
                 "SCO_COMMENT": "Morte ou incapacidade total permanente. (aposentadoria por invalidez)."
             },
             "DELETE": {
-                "P_SCO_ID_CONSEQUENCE": "E"
+                "P_SCO_ID_CONSEQUENCE": "189"
             }
         }
     },
