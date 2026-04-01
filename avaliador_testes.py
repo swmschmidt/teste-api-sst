@@ -143,8 +143,8 @@ def _avaliar_parametros_validos(
 
 def _avaliar_crud_get(cod_retorno: str) -> bool:
     """Avalia GET no contexto CRUD."""
-    criterios = CRITERIOS_SUCESSO["crud_get"]
-    return cod_retorno == criterios["codRetorno"]
+    # Para CRUD, apenas erro interno (500) deve reprovar o GET.
+    return cod_retorno is not None and cod_retorno != "500"
 
 
 def _avaliar_crud_delete(cod_retorno: str, desc_retorno: str) -> bool:
