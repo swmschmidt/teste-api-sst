@@ -142,6 +142,8 @@ def testar_endpoint_crud(
     nome_endpoint = obter_nome_endpoint(endpoint)
     caminho = endpoint["path"]
     metodos = endpoint.get("methods", {})
+    from overrides_endpoints import OVERRIDES_ENDPOINTS
+    tem_override_endpoint = endpoint.get("x_objeto_api", "") in OVERRIDES_ENDPOINTS
     
     print(f"\n{'='*80}")
     print(f"Testando CRUD completo: {nome_endpoint}")
@@ -160,8 +162,12 @@ def testar_endpoint_crud(
     # Extrai dados do primeiro registro
     dados_registro = extrair_dados_primeiro_registro(resultado_get)
     if not dados_registro:
-        print("ERRO: Não foi possível extrair dados do registro - PARANDO")
-        return resultados
+        if tem_override_endpoint:
+            print("AVISO: GET sem registros, mas endpoint tem override - continuando CRUD")
+            dados_registro = {}
+        else:
+            print("ERRO: Não foi possível extrair dados do registro - PARANDO")
+            return resultados
     
     # Extrai parâmetros
     parametros = {}
