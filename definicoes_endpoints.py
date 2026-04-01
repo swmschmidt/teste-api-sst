@@ -1,6 +1,9 @@
-"""
-Overrides de Endpoints - Configurações especiais para endpoints específicos.
-Valores hardcoded necessários para testar endpoints com requisitos particulares.
+﻿"""
+Definições de Endpoints - Define parâmetros e regras de execução
+para os testes de cada endpoint.
+
+Centraliza os dados e comportamentos necessários para validar
+cada operação (GET, POST, PUT, DELETE).
 """
 
 # Estrutura:
@@ -28,7 +31,7 @@ Valores hardcoded necessários para testar endpoints com requisitos particulares
 #     }
 # }
 
-OVERRIDES_ENDPOINTS = {
+DEFINICOES_ENDPOINTS = {
     "CBR_API_REST_SST_R007": {
         "substituicoes": {
             "GET": {
@@ -3236,3 +3239,4 @@ OVERRIDES_ENDPOINTS = {
         }
     }
 }
+

@@ -1,10 +1,10 @@
-"""
+﻿"""
 Construtor de parâmetros para requisições à API.
 Orquestra a construção de parâmetros válidos e inválidos.
 """
 from typing import Dict, List, Optional
 from extrator_valores import extrair_valor_valido_da_resposta
-from substituicoes_endpoint import aplicar_overrides_especificos
+from substituicoes_endpoint import aplicar_definicoes_especificas
 
 
 def construir_parametros_validos(
@@ -20,8 +20,8 @@ def construir_parametros_validos(
     Args:
         parameters: Lista de parâmetros da especificação
         resultado_sem_params: Resultado da chamada sem parâmetros (opcional)
-        endpoint: Informações do endpoint (opcional, para overrides)
-        metodo: Método HTTP (GET, POST, PUT, DELETE) para aplicar overrides específicos
+        endpoint: Informações do endpoint (opcional, para definicoes)
+        metodo: Método HTTP (GET, POST, PUT, DELETE) para aplicar definicoes específicos
         
     Returns:
         Dict com parâmetros válidos construídos
@@ -47,9 +47,9 @@ def construir_parametros_validos(
     else:
         parametros_validos = _construir_fallback(parametros_query)
     
-    # Aplica overrides específicos de endpoints se necessário
+    # Aplica definicoes específicos de endpoints se necessário
     if endpoint:
-        parametros_validos = aplicar_overrides_especificos(
+        parametros_validos = aplicar_definicoes_especificas(
             parametros_validos,
             endpoint,
             metodo
@@ -158,3 +158,5 @@ def _construir_fallback(parametros_query: List[Dict]) -> Dict:
             )
     
     return parametros_validos
+
+
