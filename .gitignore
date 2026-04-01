@@ -36,3 +36,6 @@ relatorio_*.txt
 
 # Folders
 suporte/
+
+# Prompts
+*.prompt
