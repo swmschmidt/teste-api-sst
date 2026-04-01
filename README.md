@@ -1,4 +1,4 @@
-# Sistema de Testes API SST
+﻿# Sistema de Testes API SST
 
 Sistema automatizado para testes de endpoints da API SST com suporte a testes GET e CRUD completo.
 
@@ -189,7 +189,7 @@ Cada módulo tem uma responsabilidade clara e única:
 Fácil adicionar novos:
 - Tipos de teste (em `cenarios_teste.py`)
 - Formatos de relatório (em `gerador_relatorios.py`)
-- Overrides de endpoints (em `substituicoes_endpoint.py`)
+- Definicoes de endpoints (em `substituicoes_endpoint.py`)
 
 ### Manutenibilidade
 - Código limpo e bem documentado
@@ -243,43 +243,46 @@ REQUEST_DELAY_SECONDS = 1  # 1 segundo entre cada requisição
 MAX_RESPONSE_SIZE = 5000  # Trunca respostas maiores que 5000 caracteres
 ```
 
-### Overrides de Endpoints
+### Definicoes de Endpoints
 
-Configure valores hardcoded para endpoints específicos em `configuracao.py`:
+O módulo `definicoes_endpoints.py` é o mecanismo padrão para definir dados e comportamento de teste por endpoint.
+Ele centraliza parâmetros e regras de execução para GET, POST, PUT e DELETE.
+
+Configure as definições em `definicoes_endpoints.py` (importado por `configuracao.py`):
 
 ```python
-ENDPOINT_OVERRIDES = {
+DEFINICOES_ENDPOINTS = {
     "CBR_API_REST_SST_R082H": {
-        "skip_no_params": True,  # Pula teste sem parâmetros
-        "skip_message": "Não há teste sem parâmetros para este endpoint. P_SCO_ID_HR é obrigatório.",
-        "overrides": {
-            "GET": {  # Overrides específicos para GET
+        "pular_sem_parametros": True,  # Pula teste sem parâmetros
+        "mensagem_pular": "Não há teste sem parâmetros para este endpoint. P_SCO_ID_HR é obrigatório.",
+        "substituicoes": {
+            "GET": {  # Definições específicas para GET
                 "P_SCO_ID_HR": "10609",
                 "P_SCO_ID_DISABILITY": "01",
                 "P_SCO_DT_START": "2025-10-09"
             },
-            "POST": {  # Overrides específicos para POST
+            "POST": {  # Definições específicas para POST
                 "P_SCO_ID_HR": "10610"
             }
         }
     },
     "CBR_API_REST_SST_R050": {
-        "special_validation": True  # Usa validação especial
+        "validacao_comparativa": True  # Usa validação comparativa de totalRegistros
     }
 }
 ```
 
 **Opções disponíveis:**
-- **`skip_no_params`** - Se `True`, pula o teste sem parâmetros
-- **`skip_message`** - Mensagem explicativa quando pulado
-- **`special_validation`** - Se `True`, aplica validação especial de totalRegistros
-- **`overrides`** - Dict de parâmetros por método HTTP (GET, POST, PUT, DELETE)
+- **`pular_sem_parametros`** - Se `True`, pula o teste sem parâmetros
+- **`mensagem_pular`** - Mensagem explicativa quando pulado
+- **`validacao_comparativa`** - Se `True`, aplica validação comparativa de totalRegistros
+- **`substituicoes`** - Dict de parâmetros por método HTTP (GET, POST, PUT, DELETE)
 
-Cada método pode ter seus próprios overrides, permitindo valores diferentes para GET, POST, PUT e DELETE.
+Cada método pode ter suas próprias definições, permitindo valores diferentes para GET, POST, PUT e DELETE.
 
 ## Endpoints Especiais
 
-Alguns endpoints requerem tratamento especial (configurados em `ENDPOINT_OVERRIDES`):
+Alguns endpoints requerem tratamento especial (configurados em `DEFINICOES_ENDPOINTS`):
 
 - **R082H** - Requer parâmetros obrigatórios (P_SCO_ID_HR, P_SCO_ID_DISABILITY, P_SCO_DT_START)
 - **R057B/R057D** - Requer P_SCO_ID_RISK_FACTOR específico ("AG1")
@@ -298,5 +301,7 @@ Alguns endpoints requerem tratamento especial (configurados em `ENDPOINT_OVERRID
 Para adicionar suporte a novos cenários de teste:
 1. Implemente a lógica em `cenarios_teste.py`
 2. Adicione avaliadores específicos em `avaliador_testes.py`
-3. Configure overrides se necessário em `ENDPOINT_OVERRIDES` no `configuracao.py`
+3. Configure definicoes_endpoints se necessário em `definicoes_endpoints.py`
+
+
 

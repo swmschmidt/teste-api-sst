@@ -1,4 +1,4 @@
-# Configurações gerais do sistema de testes
+﻿# Configurações gerais do sistema de testes
 
 # Autenticação e URLs
 API_KEY = "Basic YOUR_API_KEY_HERE"
@@ -62,7 +62,7 @@ CRITERIOS_SUCESSO = {
     }
 }
 
-# ===== Overrides de Endpoints =====
+# ===== Definicoes de Endpoints =====
 # Configurações especiais para endpoints que requerem valores hardcoded
 # Estrutura:
 # "x_objeto_api": {
@@ -88,7 +88,7 @@ CRITERIOS_SUCESSO = {
 #         "DELETE": {"param": "valor"}   # Substituições para método DELETE
 #     }
 # }
-OVERRIDES_ENDPOINTS = {
+DEFINICOES_ENDPOINTS = {
     # Exemplo 1: Endpoint com parâmetros obrigatórios
     "CBR_API_REST_SST_R082H": {
         "pular_sem_parametros": True,
@@ -117,5 +117,7 @@ OVERRIDES_ENDPOINTS = {
     "CBR_API_REST_SST_R050": {
         "validacao_comparativa": True
     }
-    # Adicione mais overrides conforme necessário...
+    # Adicione mais definicoes conforme necessário...
 }
+
+

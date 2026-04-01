@@ -1,18 +1,18 @@
-"""
-Configurações de overrides para endpoints específicos.
+﻿"""
+Configurações de definicoes para endpoints específicos.
 Centraliza tratamentos especiais e hardcoded values para endpoints problemáticos.
 """
 from typing import Dict, Optional
-from overrides_endpoints import OVERRIDES_ENDPOINTS
+from definicoes_endpoints import DEFINICOES_ENDPOINTS
 
 
-def aplicar_overrides_especificos(
+def aplicar_definicoes_especificas(
     parametros_validos: Dict,
     endpoint: Dict,
     metodo: str = "GET"
 ) -> Dict:
     """
-    Aplica overrides específicos para endpoints que requerem valores hardcoded.
+    Aplica definicoes específicos para endpoints que requerem valores hardcoded.
     
     Args:
         parametros_validos: Parâmetros construídos normalmente
@@ -20,15 +20,15 @@ def aplicar_overrides_especificos(
         metodo: Método HTTP (GET, POST, PUT, DELETE)
         
     Returns:
-        Parâmetros com overrides aplicados
+        Parâmetros com definicoes aplicados
     """
     x_objeto_api = endpoint.get("x_objeto_api", "")
     
-    # Verifica se há overrides configurados para este endpoint
-    if x_objeto_api not in OVERRIDES_ENDPOINTS:
+    # Verifica se há definicoes configurados para este endpoint
+    if x_objeto_api not in DEFINICOES_ENDPOINTS:
         return parametros_validos
     
-    config_endpoint = OVERRIDES_ENDPOINTS[x_objeto_api]
+    config_endpoint = DEFINICOES_ENDPOINTS[x_objeto_api]
     substituicoes = config_endpoint.get("substituicoes", {})
     
     # Verifica se há substituições para este método específico
@@ -38,16 +38,16 @@ def aplicar_overrides_especificos(
     # Aplica as substituições configuradas
     parametros_atualizados = parametros_validos.copy()
     
-    # Coleta todos os parâmetros P_ do override para este método
-    override_p_params = {k: v for k, v in substituicoes[metodo].items() if k.startswith("P_")}
+    # Coleta todos os parâmetros P_ do definicao para este método
+    definicao_p_params = {k: v for k, v in substituicoes[metodo].items() if k.startswith("P_")}
     
-    if override_p_params:
-        # Se há overrides com P_, remove TODOS os P_ existentes e usa APENAS os do override
-        # Isso garante que overrides substituam completamente os parâmetros de query, não fazem merge
+    if definicao_p_params:
+        # Se há definicoes com P_, remove TODOS os P_ existentes e usa APENAS os do definicao
+        # Isso garante que definicoes substituam completamente os parâmetros de query, não fazem merge
         parametros_atualizados = {k: v for k, v in parametros_atualizados.items() if not k.startswith("P_")}
-        parametros_atualizados.update(override_p_params)
+        parametros_atualizados.update(definicao_p_params)
     
-    # Atualiza parâmetros não-P_ que estão no override (raro, mas permite flexibilidade)
+    # Atualiza parâmetros não-P_ que estão no definicao (raro, mas permite flexibilidade)
     for param_nome, param_valor in substituicoes[metodo].items():
         if not param_nome.startswith("P_") and param_nome in parametros_atualizados:
             parametros_atualizados[param_nome] = param_valor
@@ -67,10 +67,10 @@ def deve_pular_teste_sem_parametros(endpoint: Dict) -> bool:
     """
     x_objeto_api = endpoint.get("x_objeto_api", "")
     
-    if x_objeto_api not in OVERRIDES_ENDPOINTS:
+    if x_objeto_api not in DEFINICOES_ENDPOINTS:
         return False
     
-    return OVERRIDES_ENDPOINTS[x_objeto_api].get("pular_sem_parametros", False)
+    return DEFINICOES_ENDPOINTS[x_objeto_api].get("pular_sem_parametros", False)
 
 
 def obter_mensagem_skip(endpoint: Dict) -> Optional[str]:
@@ -85,10 +85,10 @@ def obter_mensagem_skip(endpoint: Dict) -> Optional[str]:
     """
     x_objeto_api = endpoint.get("x_objeto_api", "")
     
-    if x_objeto_api not in OVERRIDES_ENDPOINTS:
+    if x_objeto_api not in DEFINICOES_ENDPOINTS:
         return None
     
-    return OVERRIDES_ENDPOINTS[x_objeto_api].get("mensagem_pular")
+    return DEFINICOES_ENDPOINTS[x_objeto_api].get("mensagem_pular")
 
 
 def requer_validacao_especial_registros(endpoint: Dict) -> bool:
@@ -111,7 +111,9 @@ def requer_validacao_especial_registros(endpoint: Dict) -> bool:
     """
     x_objeto_api = endpoint.get("x_objeto_api", "")
     
-    if x_objeto_api not in OVERRIDES_ENDPOINTS:
+    if x_objeto_api not in DEFINICOES_ENDPOINTS:
         return False
     
-    return OVERRIDES_ENDPOINTS[x_objeto_api].get("validacao_comparativa", False)
+    return DEFINICOES_ENDPOINTS[x_objeto_api].get("validacao_comparativa", False)
+
+

@@ -1,20 +1,20 @@
-"""
+﻿"""
 Construtor de bodies para requisições HTTP.
 Responsável por criar e modificar bodies de requisições POST/PUT.
 """
 from typing import Dict, List, Optional, Any
 
 
-def aplicar_overrides_body(
+def aplicar_definicoes_body(
     body: Dict,
     endpoint: Dict,
     metodo: str
 ) -> Dict:
     """
-    Aplica overrides configurados ao body da requisição.
+    Aplica definicoes configurados ao body da requisição.
     
-    Quando há overrides configurados para o método, SUBSTITUI completamente o body
-    pelos valores do override (não faz merge).
+    Quando há definicoes configurados para o método, SUBSTITUI completamente o body
+    pelos valores do definicao (não faz merge).
     
     Args:
         body: Body original construído
@@ -22,31 +22,31 @@ def aplicar_overrides_body(
         metodo: Método HTTP (POST, PUT, DELETE)
         
     Returns:
-        Body com overrides aplicados (substituição completa se houver override)
+        Body com definicoes aplicados (substituição completa se houver definicao)
     """
-    from overrides_endpoints import OVERRIDES_ENDPOINTS
+    from definicoes_endpoints import DEFINICOES_ENDPOINTS
     
     x_objeto_api = endpoint.get("x_objeto_api", "")
     
-    # Verifica se há overrides configurados
-    if x_objeto_api not in OVERRIDES_ENDPOINTS:
+    # Verifica se há definicoes configurados
+    if x_objeto_api not in DEFINICOES_ENDPOINTS:
         return body
     
-    config = OVERRIDES_ENDPOINTS[x_objeto_api]
+    config = DEFINICOES_ENDPOINTS[x_objeto_api]
     substituicoes = config.get("substituicoes", {})
     
     # Verifica se há substituições para este método
     if metodo not in substituicoes:
         return body
     
-    # SUBSTITUI completamente o body pelos valores do override
-    body_override = {}
+    # SUBSTITUI completamente o body pelos valores do definicao
+    body_definicao = {}
     for campo, valor in substituicoes[metodo].items():
         # Remove prefixo P_ se necessário (campos de query que não vão no body)
         if not campo.startswith("P_"):
-            body_override[campo] = valor
+            body_definicao[campo] = valor
     
-    return body_override
+    return body_definicao
 
 
 def construir_body_post(dados_registro: Dict) -> Dict:
@@ -198,3 +198,5 @@ def _deve_modificar_campo(chave: str, valor: Any) -> bool:
         return False
     
     return True
+
+

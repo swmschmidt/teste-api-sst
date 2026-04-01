@@ -1,4 +1,4 @@
-"""
+﻿"""
 Cenários de teste para endpoints da API.
 Responsável por executar diferentes tipos de testes (GET, CRUD).
 """
@@ -21,7 +21,7 @@ from extrator_dados import (
 from construtor_body import (
     construir_body_de_parametros,
     modificar_body_put,
-    aplicar_overrides_body
+    aplicar_definicoes_body
 )
 from substituicoes_endpoint import (
     deve_pular_teste_sem_parametros,
@@ -142,8 +142,8 @@ def testar_endpoint_crud(
     nome_endpoint = obter_nome_endpoint(endpoint)
     caminho = endpoint["path"]
     metodos = endpoint.get("methods", {})
-    from overrides_endpoints import OVERRIDES_ENDPOINTS
-    tem_override_endpoint = endpoint.get("x_objeto_api", "") in OVERRIDES_ENDPOINTS
+    from definicoes_endpoints import DEFINICOES_ENDPOINTS
+    tem_definicao_endpoint = endpoint.get("x_objeto_api", "") in DEFINICOES_ENDPOINTS
     
     print(f"\n{'='*80}")
     print(f"Testando CRUD completo: {nome_endpoint}")
@@ -162,8 +162,8 @@ def testar_endpoint_crud(
     # Extrai dados do primeiro registro
     dados_registro = extrair_dados_primeiro_registro(resultado_get)
     if not dados_registro:
-        if tem_override_endpoint:
-            print("AVISO: GET sem registros, mas endpoint tem override - continuando CRUD")
+        if tem_definicao_endpoint:
+            print("AVISO: GET sem registros, mas endpoint tem definicao - continuando CRUD")
             dados_registro = {}
         else:
             print("ERRO: Não foi possível extrair dados do registro - PARANDO")
@@ -190,7 +190,7 @@ def testar_endpoint_crud(
         base_url, caminho, headers, nome_endpoint, metodos,
         dados_registro, parametros, nome_campo_id, request_delay, resultados,
         resultado_get,  # Passa resultado GET para extrair valores dos parâmetros POST
-        endpoint  # Passa endpoint para aplicar overrides
+        endpoint  # Passa endpoint para aplicar definicoes
     )
     
     if not resultado_post_info or not resultado_post_info["sucesso"]:
@@ -333,7 +333,7 @@ def _executar_estrategia_put_delete_post(
     print(f"   Iniciando estratégia especial: PUT -> DELETE -> POST")
     
     # Extrai o ID que foi usado no POST (de body_post ou parametros_post)
-    # Este é o ID do override que causou o conflito "já existe"
+    # Este é o ID do definicao que causou o conflito "já existe"
     id_do_post = None
     
     # Normaliza o nome_campo_id removendo P_ se existir
@@ -416,7 +416,7 @@ def _executar_estrategia_put_delete_post(
         None  # Não usa ID de teste, mantém ID existente
     )
     body_put = modificar_body_put(body_put)  # Aplica modificações (muda textos para "MODIFICADO")
-    body_put = aplicar_overrides_body(body_put, endpoint, "PUT")
+    body_put = aplicar_definicoes_body(body_put, endpoint, "PUT")
     
     resultado_put = chamar_api(
         base_url, caminho, headers,
@@ -498,7 +498,7 @@ def _executar_estrategia_put_delete_post(
         valores_originais,
         None  # Mantém ID original
     )
-    body_post_restauracao = aplicar_overrides_body(body_post_restauracao, endpoint, "POST")
+    body_post_restauracao = aplicar_definicoes_body(body_post_restauracao, endpoint, "POST")
     
     resultado_post_final = chamar_api(
         base_url, caminho, headers,
@@ -590,14 +590,14 @@ def _executar_crud_post(
     """Executa passo POST do CRUD."""
     print(f"\n[2/4] POST - Criando novo registro com ID de teste...")
     
-    # Verifica se há override configurado para este endpoint
-    from overrides_endpoints import OVERRIDES_ENDPOINTS
+    # Verifica se há definicao configurado para este endpoint
+    from definicoes_endpoints import DEFINICOES_ENDPOINTS
     x_objeto_api = endpoint.get("x_objeto_api", "")
-    tem_override_post = (x_objeto_api in OVERRIDES_ENDPOINTS and 
-                         "POST" in OVERRIDES_ENDPOINTS[x_objeto_api].get("substituicoes", {}))
+    tem_definicao_post = (x_objeto_api in DEFINICOES_ENDPOINTS and 
+                         "POST" in DEFINICOES_ENDPOINTS[x_objeto_api].get("substituicoes", {}))
     
-    # Se há override, usa apenas 1 tentativa. Caso contrário, tenta múltiplos IDs
-    ids_teste = [None] if tem_override_post else [987154874, 23942835, 456789123]
+    # Se há definicao, usa apenas 1 tentativa. Caso contrário, tenta múltiplos IDs
+    ids_teste = [None] if tem_definicao_post else [987154874, 23942835, 456789123]
     resultado_post = None
     body_post = None
     id_usado = None
@@ -610,7 +610,7 @@ def _executar_crud_post(
         if id_teste is not None:
             print(f"   Tentando POST com ID={id_teste}...")
         else:
-            print(f"   Executando POST com valores do override...")
+            print(f"   Executando POST com valores do definicao...")
             
         tamanho_maximo_funcionou = None  # Rastreia tamanho máximo de ID que funcionou
         body_post = construir_body_de_parametros(
@@ -618,8 +618,8 @@ def _executar_crud_post(
             dados_registro,
             id_teste
         )
-        # Aplica overrides configurados ao body
-        body_post = aplicar_overrides_body(body_post, endpoint, "POST")
+        # Aplica definicoes configurados ao body
+        body_post = aplicar_definicoes_body(body_post, endpoint, "POST")
         
         # Constrói parâmetros de query específicos do POST usando dados do GET
         parametros_post = construir_parametros_validos(
@@ -641,8 +641,8 @@ def _executar_crud_post(
             consumes=metodos["post"].get("consumes")
         )
         
-        # Se há override, não tenta múltiplos IDs - aceita o resultado direto
-        if tem_override_post:
+        # Se há definicao, não tenta múltiplos IDs - aceita o resultado direto
+        if tem_definicao_post:
             # ANTES de avaliar como sucesso/falha, verifica se é o caso especial 404/200 com "já existe"
             if _verificar_registro_existe_com_erro_404(resultado_post):
                 print(f"   Detectado caso especial: erro 404/200 com 'registro já existe'")
@@ -694,10 +694,10 @@ def _executar_crud_post(
                         id_usado = body_post[campo]
                         break
                 if not id_usado:
-                    id_usado = "override"  # Fallback genérico
+                    id_usado = "definicao"  # Fallback genérico
             break
         
-        # Lógica normal para quando NÃO há override:
+        # Lógica normal para quando NÃO há definicao:
         # Verifica se deu erro de registro já existe
         if verificar_registro_ja_existe(resultado_post):
             print(f"   Registro com ID={id_teste} já existe, tentando próximo ID...")
@@ -812,8 +812,8 @@ def _executar_crud_post(
         #         None  # Não usa ID de teste, mantém os dados originais
         #     )
         #     
-        #     # Aplica overrides se houver
-        #     body_post = aplicar_overrides_body(body_post, endpoint, "POST")
+        #     # Aplica definicoes se houver
+        #     body_post = aplicar_definicoes_body(body_post, endpoint, "POST")
         #     
         #     # Reconstrói parâmetros POST
         #     parametros_post = construir_parametros_validos(
@@ -931,8 +931,8 @@ def _executar_crud_post(
                     dados_registro,
                     id_truncado
                 )
-                # Aplica overrides configurados ao body
-                body_post = aplicar_overrides_body(body_post, endpoint, "POST")
+                # Aplica definicoes configurados ao body
+                body_post = aplicar_definicoes_body(body_post, endpoint, "POST")
                 
                 parametros_post = construir_parametros_validos(
                     metodos["post"].get("parameters", []),
@@ -977,7 +977,7 @@ def _executar_crud_post(
             if verificar_registro_ja_existe(resultado_post):
                 continue
         
-        # Se não é erro de duplicação ou tamanho, avalia sucesso e para (só para não-override)
+        # Se não é erro de duplicação ou tamanho, avalia sucesso e para (só para não-definicao)
         resultado_post = avaliar_sucesso_teste(resultado_post, "crud_post")
         
         # Adiciona informação sobre limitação de tamanho de ID se foi truncado
@@ -987,13 +987,13 @@ def _executar_crud_post(
             resultado_post["metadata"]["max_id_length"] = tamanho_maximo_funcionou
             resultado_post["metadata"]["id_truncation_note"] = f"Gera erro ORA-01438 caso o ID seja maior que {tamanho_maximo_funcionou} dígitos"
         
-        # Usa o id_teste para casos sem override
+        # Usa o id_teste para casos sem definicao
         id_usado = id_teste
         break
     
     # Se todos os IDs falharam (existem ou erro), tenta estratégia de recuperação como última tentativa
     # DESATIVADO: Estratégia de última tentativa (DELETE + POST) - desativada por ser muito arriscada
-    # if resultado_post and id_usado is None and not tem_override_post:
+    # if resultado_post and id_usado is None and not tem_definicao_post:
     #     print(f"\n   AVISO: Todas as tentativas de POST com IDs de teste falharam")
     #     print(f"   Última tentativa: Estratégia de recuperação (DELETE + POST)")
     #     
@@ -1039,7 +1039,7 @@ def _executar_crud_post(
     #                     registro_para_deletar,
     #                     None
     #                 )
-    #                 body_post = aplicar_overrides_body(body_post, endpoint, "POST")
+    #                 body_post = aplicar_definicoes_body(body_post, endpoint, "POST")
     #                 
     #                 parametros_post = construir_parametros_validos(
     #                     metodos["post"].get("parameters", []),
@@ -1178,11 +1178,11 @@ def _executar_crud_put(
     """Executa passo PUT do CRUD."""
     print(f"\n[3/4] PUT - Modificando registro...")
     
-    # Verifica se há override configurado para este endpoint
-    from overrides_endpoints import OVERRIDES_ENDPOINTS
+    # Verifica se há definicao configurado para este endpoint
+    from definicoes_endpoints import DEFINICOES_ENDPOINTS
     x_objeto_api = endpoint.get("x_objeto_api", "")
-    tem_override_put = (x_objeto_api in OVERRIDES_ENDPOINTS and 
-                        "PUT" in OVERRIDES_ENDPOINTS[x_objeto_api].get("substituicoes", {}))
+    tem_definicao_put = (x_objeto_api in DEFINICOES_ENDPOINTS and 
+                        "PUT" in DEFINICOES_ENDPOINTS[x_objeto_api].get("substituicoes", {}))
     
     body_put_original = construir_body_de_parametros(
         metodos["put"]["parameters"],
@@ -1191,11 +1191,11 @@ def _executar_crud_put(
     )
     body_put_modificado = modificar_body_put(body_put_original)
     
-    # Aplica overrides configurados ao body PUT (substitui completamente se houver override)
-    body_put_modificado = aplicar_overrides_body(body_put_modificado, endpoint, "PUT")
+    # Aplica definicoes configurados ao body PUT (substitui completamente se houver definicao)
+    body_put_modificado = aplicar_definicoes_body(body_put_modificado, endpoint, "PUT")
     
-    # Só inclui o ID no body se NÃO houver override (override já tem os campos necessários)
-    if not tem_override_put:
+    # Só inclui o ID no body se NÃO houver definicao (definicao já tem os campos necessários)
+    if not tem_definicao_put:
         nome_campo_body = nome_campo_id.replace("P_", "", 1) if nome_campo_id.startswith("P_") else nome_campo_id
         body_put_modificado[nome_campo_body] = id_usado
     
@@ -1242,11 +1242,11 @@ def _executar_crud_put(
                 id_usado
             )
             
-            # Aplica overrides se houver (mantém consistência)
-            body_put_restauracao = aplicar_overrides_body(body_put_restauracao, endpoint, "PUT")
+            # Aplica definicoes se houver (mantém consistência)
+            body_put_restauracao = aplicar_definicoes_body(body_put_restauracao, endpoint, "PUT")
             
             # Adiciona o ID se necessário
-            if not tem_override_put:
+            if not tem_definicao_put:
                 nome_campo_body = nome_campo_id.replace("P_", "", 1) if nome_campo_id.startswith("P_") else nome_campo_id
                 body_put_restauracao[nome_campo_body] = id_usado
             
@@ -1317,3 +1317,5 @@ def _executar_crud_delete(
     else:
         print(f"SUCESSO: DELETE bem-sucedido")
         time.sleep(request_delay)
+
+
